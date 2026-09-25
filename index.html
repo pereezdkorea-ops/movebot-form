@@ -52,6 +52,9 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 .step button{width:46px;height:42px;border:0;border-radius:10px;background:var(--sec);color:var(--btn);font-size:24px;line-height:1}
 .step button:disabled{opacity:.35}
 .step output{min-width:34px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
+.svc+.svc{margin-top:10px}
+.svc .lbl{font-size:14px;color:var(--text)}
+.svc .lbl small{color:var(--hint);font-size:12px;margin-left:4px}
 .hide{display:none}
 .note{color:var(--hint);font-size:13px;text-align:center;margin:6px 0 0}
 #fallback{width:100%;min-height:50px;border:0;border-radius:12px;background:var(--btn);color:var(--btn-text);font:inherit;font-weight:600}
@@ -93,8 +96,12 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     <div id="items"></div>
   </section>
   <section>
+    <h2>🛠 Услуги</h2>
+    <div id="services"></div>
+  </section>
+  <section>
     <h2>💬 Комментарий</h2>
-    <textarea id="comment" maxlength="500" rows="2" placeholder="Необязательно: адрес, нужны ли грузчики…"></textarea>
+    <textarea id="comment" maxlength="500" rows="2" placeholder="Необязательно: адрес, пожелания…"></textarea>
   </section>
   <div id="msg"></div>
   <button id="fallback" class="hide" type="button">Отправить заявку</button>
@@ -190,6 +197,16 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     ctl.appendChild(minus); ctl.appendChild(out); ctl.appendChild(plus); row.appendChild(ctl); $("items").appendChild(row);
   });
 
+  // ---- services (yes/no toggles, tap again = not specified) ----
+  var SERVICES = [["movers","👷 Грузчики","",[[true,"Нужны"],[false,"Не нужны"]]],
+                  ["ladder","🪜 Садарича","подъёмник через окно",[[true,"Нужна"],[false,"Не нужна"]]]];
+  var svc = {};
+  SERVICES.forEach(function(s){
+    var row = el("div",{"class":"svc"});
+    row.appendChild(el("div",{"class":"lbl"}, s[1] + (s[2] ? "<small>"+s[2]+"</small>" : "")));
+    svc[s[0]] = segment(s[3]); row.appendChild(svc[s[0]]); $("services").appendChild(row);
+  });
+
   // ---- payload ----
   function placeData(p){
     return {city:p.city.value, other:p.city.value==="Другой" ? p.other.value.trim().slice(0,40) : "",
@@ -199,7 +216,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     var data = {v:1, from:placeData(place.from), to:placeData(place.to), date:$("date").value, time:time.value,
       housing:$("housing").value,
       bulky:Array.prototype.map.call(document.querySelectorAll(".chip.on"),function(c){return c.getAttribute("data-v")}),
-      bulky_other:$("bulky_other").value.trim().slice(0,100), items:counts, comment:$("comment").value.trim().slice(0,500)};
+      bulky_other:$("bulky_other").value.trim().slice(0,100), items:counts,
+      movers:svc.movers.get(), ladder:svc.ladder.get(), comment:$("comment").value.trim().slice(0,500)};
     var s = JSON.stringify(data);
     while(new TextEncoder().encode(s).length > 3500 && data.comment){data.comment = data.comment.slice(0,-20); s = JSON.stringify(data)}
     return s;
