@@ -53,12 +53,13 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 .chip.bump{animation:bump .18s ease-out}
 @keyframes bump{50%{transform:scale(1.07)}}
 .sub{margin:-6px 0 10px;font-size:12px;color:var(--hint)}
-.step{display:flex;align-items:center;justify-content:space-between;min-height:50px}
-.step+.step{border-top:1px solid var(--sec)}
-.step .ctl{display:flex;align-items:center;gap:6px}
-.step button{width:46px;height:42px;border:0;border-radius:10px;background:var(--sec);color:var(--btn);font-size:24px;line-height:1}
-.step button:disabled{opacity:.35}
-.step output{min-width:34px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
+.pick{display:flex;align-items:center;justify-content:space-between;min-height:52px}
+.pick+.pick{border-top:1px solid var(--sec)}
+.pick select{flex:none;width:76px;min-height:40px;height:40px;padding:0 8px;border-radius:10px;border:1px solid transparent;
+  background:var(--sec);background-image:none;color:var(--hint);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;
+  text-align:center;text-align-last:center;cursor:pointer;touch-action:manipulation;transition:background-color .15s,color .15s}
+.pick select.on{background:var(--btn);color:var(--btn-text)}
+.pick select:focus{border-color:var(--btn)}
 .svc+.svc{margin-top:10px}
 .svc .lbl{font-size:14px;color:var(--text)}
 .svc .lbl small{color:var(--hint);font-size:12px;margin-left:4px}
@@ -211,18 +212,18 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   });
   function bulkyData(){var o = {}; BULKY.forEach(function(b){if(bulky[b] > 0) o[b] = bulky[b]}); return o}
 
-  // ---- steppers ----
-  var counts = {};
+  // ---- item pickers: native <select> = iOS wheel picker; closed it shows only the chosen value ----
+  var ITEM_MAX = 50, counts = {};
   ITEMS.forEach(function(it){
     counts[it[0]] = 0;
-    var row = el("div",{"class":"step"});
+    var row = el("label",{"class":"pick"});
     row.appendChild(el("span",{},it[1]));
-    var ctl = el("div",{"class":"ctl"}), minus = el("button",{type:"button","aria-label":"меньше"},"−"),
-        out = el("output",{},"0"), plus = el("button",{type:"button","aria-label":"больше"},"+");
-    function set(n){n=Math.max(0,Math.min(50,n));counts[it[0]]=n;out.textContent=n;minus.disabled=n===0;plus.disabled=n===50}
-    minus.onclick=function(){set(counts[it[0]]-1);haptic()}; plus.onclick=function(){set(counts[it[0]]+1);haptic()};
-    set(0);
-    ctl.appendChild(minus); ctl.appendChild(out); ctl.appendChild(plus); row.appendChild(ctl); $("items").appendChild(row);
+    var sel = el("select",{"data-item":it[0],"aria-label":it[1].replace(/^\S+\s/,"")});
+    for(var i=0;i<=ITEM_MAX;i++) sel.appendChild(el("option",{value:String(i)}, i ? String(i) : "—"));
+    sel.onchange = function(){var n = parseInt(sel.value,10) || 0; n = Math.max(0, Math.min(ITEM_MAX, n));
+      if(n !== counts[it[0]]) haptic("plus");
+      counts[it[0]] = n; sel.classList.toggle("on", n > 0)};
+    row.appendChild(sel); $("items").appendChild(row);
   });
 
   // ---- services (yes/no toggles, tap again = not specified) ----
