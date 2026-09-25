@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Заявка на переезд</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#fff);--text:var(--tg-theme-text-color,#000);
+  --hint:var(--tg-theme-hint-color,#8a8a8e);--link:var(--tg-theme-link-color,#2481cc);
+  --btn:var(--tg-theme-button-color,#2481cc);--btn-text:var(--tg-theme-button-text-color,#fff);
+  --sec:var(--tg-theme-secondary-bg-color,#f1f1f4);
+  --sect:var(--tg-theme-section-bg-color,var(--tg-theme-bg-color,#fff));
+  --err:var(--tg-theme-destructive-text-color,#e53935);
+}
+@media (prefers-color-scheme:dark){:root:not(.tg){
+  --bg:#17212b;--text:#f5f5f5;--hint:#708499;--sec:#232e3c;--sect:#17212b;--btn:#5288c1;--link:#6ab3f3}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--sec);color:var(--text);
+  font:16px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{padding:10px 10px calc(24px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto}
+section{background:var(--sect);border-radius:14px;padding:12px;margin-bottom:10px}
+h2{margin:0 0 10px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
+h2 .req{color:var(--hint);font-weight:400;font-size:13px;margin-left:auto}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1;min-width:0}
+select,input[type=text],input[type=date],textarea{
+  width:100%;min-height:46px;padding:10px 12px;border:1px solid transparent;border-radius:10px;
+  background:var(--sec);color:var(--text);font:inherit;outline:none;appearance:none;-webkit-appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--hint) 50%),linear-gradient(135deg,var(--hint) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
+select:invalid,select.empty{color:var(--hint)}
+input::placeholder,textarea::placeholder{color:var(--hint)}
+input[type=date]{min-width:0}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.5)}
+textarea{min-height:70px;resize:vertical}
+select:focus,input:focus,textarea:focus{border-color:var(--btn)}
+.err select,.err input{border-color:var(--err)}
+.mt{margin-top:8px}
+.lbl{font-size:13px;color:var(--hint);margin:0 0 4px 2px}
+.seg{display:flex;background:var(--sec);border-radius:10px;padding:3px;min-height:46px}
+.seg button{flex:1;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:15px;min-height:40px}
+.seg button.on{background:var(--btn);color:var(--btn-text)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--sec);background:var(--sec);color:var(--text);border-radius:22px;padding:0 14px;min-height:42px;font:inherit;font-size:15px}
+.chip.on{background:var(--btn);color:var(--btn-text);border-color:var(--btn)}
+.step{display:flex;align-items:center;justify-content:space-between;min-height:50px}
+.step+.step{border-top:1px solid var(--sec)}
+.step .ctl{display:flex;align-items:center;gap:6px}
+.step button{width:46px;height:42px;border:0;border-radius:10px;background:var(--sec);color:var(--btn);font-size:24px;line-height:1}
+.step button:disabled{opacity:.35}
+.step output{min-width:34px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
+.hide{display:none}
+.note{color:var(--hint);font-size:13px;text-align:center;margin:6px 0 0}
+#fallback{width:100%;min-height:50px;border:0;border-radius:12px;background:var(--btn);color:var(--btn-text);font:inherit;font-weight:600}
+#msg{color:var(--err);text-align:center;font-size:14px;min-height:18px;margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+  <section id="s-from">
+    <h2>📍 Откуда <span class="req">обязательно</span></h2>
+    <div data-place="from"></div>
+  </section>
+  <section id="s-to">
+    <h2>🏁 Куда <span class="req">обязательно</span></h2>
+    <div data-place="to"></div>
+  </section>
+  <section>
+    <h2>📅 Когда</h2>
+    <div class="row">
+      <input type="date" id="date" aria-label="Дата">
+      <select id="time" aria-label="Время"></select>
+    </div>
+  </section>
+  <section>
+    <h2>🏠 Жильё</h2>
+    <select id="housing" class="empty">
+      <option value="">Выберите…</option>
+      <option>Ванрум</option><option>1.5 комнаты</option><option>2 комнаты</option><option>3 комнаты</option>
+      <option>Квартира/дом</option><option>Офис</option><option>Только вещи</option>
+    </select>
+  </section>
+  <section>
+    <h2>🛋 Крупное</h2>
+    <div class="chips" id="bulky"></div>
+    <input type="text" id="bulky_other" class="mt" maxlength="100" placeholder="Другое (пианино, велосипед…)">
+  </section>
+  <section>
+    <h2>🎒 Вещи</h2>
+    <div id="items"></div>
+  </section>
+  <section>
+    <h2>💬 Комментарий</h2>
+    <textarea id="comment" maxlength="500" rows="2" placeholder="Необязательно: адрес, нужны ли грузчики…"></textarea>
+  </section>
+  <div id="msg"></div>
+  <button id="fallback" class="hide" type="button">Отправить заявку</button>
+  <p class="note">Номер телефона бот спросит после отправки. Фото можно прислать в чат.</p>
+</main>
+<script>
+(function(){
+  "use strict";
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));  // keyboard-button Mini Apps get empty initData
+  var CITIES = ["Ансан","Инчон","Сихын","Сеул","Другой"];
+  var BULKY = ["Кровать","Диван","Холодильник","Стиралка","Шкаф","Стол","Телевизор","Кондиционер"];
+  var ITEMS = [["boxes","📦 Коробки"],["bags","👜 Сумки"],["packs","🛍 Пакеты"]];
+  var $ = function(id){return document.getElementById(id)};
+  function el(tag, attrs, html){var e=document.createElement(tag);for(var k in attrs||{})e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e}
+  function haptic(kind){try{tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged()}catch(e){}}
+
+  // ---- theme ----
+  function applyTheme(){
+    if(!tg) return;
+    var p = tg.themeParams || {}, r = document.documentElement.style;
+    if(Object.keys(p).length) document.documentElement.classList.add("tg");
+    for(var k in p) r.setProperty("--tg-theme-"+k.replace(/_/g,"-"), p[k]);
+    try{tg.setHeaderColor(p.secondary_bg_color || "secondary_bg_color"); tg.setBackgroundColor(p.secondary_bg_color || "#f1f1f4")}catch(e){}
+  }
+
+  // ---- places ----
+  var place = {};
+  function segment(values, onChange){
+    var box = el("div",{"class":"seg",role:"group"}), state = {v:null};
+    values.forEach(function(v){
+      var b = el("button",{type:"button"}, v[1]);
+      b.onclick = function(){state.v = (state.v===v[0]) ? null : v[0];
+        Array.prototype.forEach.call(box.children,function(c,i){c.classList.toggle("on", values[i][0]===state.v)});haptic();onChange&&onChange()};
+      box.appendChild(b);
+    });
+    box.get = function(){return state.v};
+    return box;
+  }
+  document.querySelectorAll("[data-place]").forEach(function(root){
+    var key = root.getAttribute("data-place");
+    var city = el("select",{"aria-label":"Город","class":"empty"});
+    city.appendChild(el("option",{value:""},"Город…"));
+    CITIES.forEach(function(c){city.appendChild(el("option",{value:c},c==="Другой"?"Другой город":c))});
+    var floor = el("select",{"aria-label":"Этаж","class":"empty"});
+    floor.appendChild(el("option",{value:""},"Этаж…"));
+    floor.appendChild(el("option",{value:"house"},"Дом / 1-й этаж"));
+    for(var i=1;i<=30;i++) floor.appendChild(el("option",{value:String(i)}, i+" этаж"));
+    floor.appendChild(el("option",{value:"basement"},"Подвал / полуподвал"));
+    var other = el("input",{type:"text",maxlength:"40",placeholder:"Какой город?","class":"mt hide"});
+    var lift = segment([[true,"🛗 Лифт есть"],[false,"Без лифта"]]);
+    var r1 = el("div",{"class":"row"}); r1.appendChild(city); r1.appendChild(floor);
+    var r2 = el("div",{"class":"mt"}); r2.appendChild(lift);
+    root.appendChild(r1); root.appendChild(other); root.appendChild(r2);
+    city.onchange = function(){other.classList.toggle("hide", city.value!=="Другой"); if(city.value==="Другой") other.focus();
+      root.parentNode.classList.remove("err"); upd(city); clearMsg(); refresh()};
+    other.oninput = function(){root.parentNode.classList.remove("err"); clearMsg(); refresh()};
+    floor.onchange = function(){upd(floor)};
+    place[key] = {city:city, other:other, floor:floor, lift:lift, section:root.parentNode};
+  });
+  function upd(sel){sel.classList.toggle("empty", !sel.value)}
+  function clearMsg(){if(validPlace(place.from) && validPlace(place.to)) $("msg").textContent=""}
+
+  // ---- when ----
+  var d = new Date(), pad = function(n){return (n<10?"0":"")+n};
+  $("date").min = d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  var time = $("time");
+  time.appendChild(el("option",{value:""},"Время…"));
+  time.appendChild(el("option",{value:"any"},"Любое время"));
+  for(var m=7*60;m<=21*60;m+=30){var t=pad(Math.floor(m/60))+":"+pad(m%60); time.appendChild(el("option",{value:t},t))}
+  time.classList.add("empty"); time.onchange=function(){upd(time)};
+  $("housing").onchange=function(){upd($("housing"))};
+
+  // ---- bulky chips ----
+  BULKY.forEach(function(b){
+    var c = el("button",{type:"button","class":"chip","data-v":b}, b);
+    c.onclick = function(){c.classList.toggle("on"); haptic()};
+    $("bulky").appendChild(c);
+  });
+
+  // ---- steppers ----
+  var counts = {};
+  ITEMS.forEach(function(it){
+    counts[it[0]] = 0;
+    var row = el("div",{"class":"step"});
+    row.appendChild(el("span",{},it[1]));
+    var ctl = el("div",{"class":"ctl"}), minus = el("button",{type:"button","aria-label":"меньше"},"−"),
+        out = el("output",{},"0"), plus = el("button",{type:"button","aria-label":"больше"},"+");
+    function set(n){n=Math.max(0,Math.min(50,n));counts[it[0]]=n;out.textContent=n;minus.disabled=n===0;plus.disabled=n===50}
+    minus.onclick=function(){set(counts[it[0]]-1);haptic()}; plus.onclick=function(){set(counts[it[0]]+1);haptic()};
+    set(0);
+    ctl.appendChild(minus); ctl.appendChild(out); ctl.appendChild(plus); row.appendChild(ctl); $("items").appendChild(row);
+  });
+
+  // ---- payload ----
+  function placeData(p){
+    return {city:p.city.value, other:p.city.value==="Другой" ? p.other.value.trim().slice(0,40) : "",
+            floor:p.floor.value, lift:p.lift.get()};
+  }
+  function payload(){
+    var data = {v:1, from:placeData(place.from), to:placeData(place.to), date:$("date").value, time:time.value,
+      housing:$("housing").value,
+      bulky:Array.prototype.map.call(document.querySelectorAll(".chip.on"),function(c){return c.getAttribute("data-v")}),
+      bulky_other:$("bulky_other").value.trim().slice(0,100), items:counts, comment:$("comment").value.trim().slice(0,500)};
+    var s = JSON.stringify(data);
+    while(new TextEncoder().encode(s).length > 3500 && data.comment){data.comment = data.comment.slice(0,-20); s = JSON.stringify(data)}
+    return s;
+  }
+  function validPlace(p){return p.city.value && (p.city.value!=="Другой" || p.other.value.trim())}
+  function refresh(){
+    if(!inTg) return;
+    var ok = validPlace(place.from) && validPlace(place.to);
+    tg.MainButton.setParams({text:"Отправить заявку", color: ok ? (tg.themeParams.button_color||"#2481cc") : (tg.themeParams.hint_color||"#8a8a8e")});
+  }
+  var sending = false;
+  function submit(){
+    if(sending) return;
+    var bad = ["from","to"].filter(function(k){return !validPlace(place[k])});
+    if(bad.length){
+      bad.forEach(function(k){place[k].section.classList.add("err")});
+      $("msg").textContent = "Укажите город «Откуда» и «Куда»";
+      place[bad[0]].section.scrollIntoView({behavior:"smooth",block:"center"});
+      try{tg.HapticFeedback.notificationOccurred("error")}catch(e){}
+      return;
+    }
+    $("msg").textContent = "";
+    var s = payload();
+    if(!inTg){ console.log("sendData", s); $("msg").textContent = "Откройте форму из бота в Telegram"; window.__lastPayload = s; return; }
+    sending = true;
+    try{tg.HapticFeedback.notificationOccurred("success")}catch(e){}
+    tg.sendData(s);   // Telegram closes the Mini App after sendData
+    setTimeout(function(){try{tg.close()}catch(e){}}, 300);
+  }
+  window.__submit = submit; window.__payload = payload;
+
+  if(tg){ tg.ready(); tg.expand(); applyTheme(); tg.onEvent && tg.onEvent("themeChanged", applyTheme);
+    try{tg.disableVerticalSwipes && tg.disableVerticalSwipes()}catch(e){} }
+  if(inTg){
+    tg.MainButton.setText("Отправить заявку"); tg.MainButton.onClick(submit); tg.MainButton.show(); refresh();
+  } else {
+    $("fallback").classList.remove("hide"); $("fallback").onclick = submit;
+  }
+})();
+</script>
+</body>
+</html>
