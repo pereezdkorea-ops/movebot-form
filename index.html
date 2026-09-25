@@ -135,7 +135,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   "use strict";
   var tg = window.Telegram && window.Telegram.WebApp;
   var inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));  // keyboard-button Mini Apps get empty initData
-  var CITIES = ["Ансан","Инчон","Сихын","Сеул","Другой"];
+  var CITIES = ["Ансан","Инчон","Сихын","Сеул"];
   var BULKY = ["Кровать","Диван","Холодильник","Стиралка","Шкаф","Стол","Телевизор","Кондиционер"];
   var ITEMS = [["boxes","📦 Коробки"],["bags","👜 Сумки"],["packs","🛍 Пакеты"]];
   var $ = function(id){return document.getElementById(id)};
@@ -172,22 +172,20 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     var key = root.getAttribute("data-place");
     var city = el("select",{"aria-label":"Город","class":"empty"});
     city.appendChild(el("option",{value:""},"Город…"));
-    CITIES.forEach(function(c){city.appendChild(el("option",{value:c},c==="Другой"?"Другой город":c))});
+    CITIES.forEach(function(c){city.appendChild(el("option",{value:c},c))});
     var floor = el("select",{"aria-label":"Этаж","class":"empty"});
     floor.appendChild(el("option",{value:""},"Этаж…"));
     floor.appendChild(el("option",{value:"house"},"Дом / 1-й этаж"));
     for(var i=1;i<=30;i++) floor.appendChild(el("option",{value:String(i)}, i+" этаж"));
     floor.appendChild(el("option",{value:"basement"},"Подвал / полуподвал"));
-    var other = el("input",{type:"text",maxlength:"40",placeholder:"Какой город?","class":"mt hide"});
     var lift = segment([[true,"🛗 Лифт есть"],[false,"Без лифта"]]);
     var r1 = el("div",{"class":"row"}); r1.appendChild(city); r1.appendChild(floor);
     var r2 = el("div",{"class":"mt"}); r2.appendChild(lift);
-    root.appendChild(r1); root.appendChild(other); root.appendChild(r2);
-    city.onchange = function(){other.classList.toggle("hide", city.value!=="Другой"); if(city.value==="Другой") other.focus();
+    root.appendChild(r1); root.appendChild(r2);
+    city.onchange = function(){
       root.parentNode.classList.remove("err"); upd(city); clearMsg(); refresh()};
-    other.oninput = function(){root.parentNode.classList.remove("err"); clearMsg(); refresh()};
     floor.onchange = function(){upd(floor)};
-    place[key] = {city:city, other:other, floor:floor, lift:lift, section:root.parentNode};
+    place[key] = {city:city, floor:floor, lift:lift, section:root.parentNode};
   });
   function upd(sel){sel.classList.toggle("empty", !sel.value)}
   function clearMsg(){if(validPlace(place.from) && validPlace(place.to)) $("msg").textContent=""}
@@ -261,7 +259,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 
   // ---- payload ----
   function placeData(p){
-    return {city:p.city.value, other:p.city.value==="Другой" ? p.other.value.trim().slice(0,40) : "",
+    return {city:p.city.value, other:"",
             floor:p.floor.value, lift:p.lift.get()};
   }
   function payload(){
@@ -274,7 +272,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     while(new TextEncoder().encode(s).length > 3500 && data.comment){data.comment = data.comment.slice(0,-20); s = JSON.stringify(data)}
     return s;
   }
-  function validPlace(p){return p.city.value && (p.city.value!=="Другой" || p.other.value.trim())}
+  function validPlace(p){return !!p.city.value}
   function refresh(){
     if(!inTg) return;
     var ok = validPlace(place.from) && validPlace(place.to);
