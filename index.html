@@ -116,6 +116,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   function applyTheme(){
     if(!tg) return;
     var p = tg.themeParams || {}, r = document.documentElement.style;
+    r.colorScheme = tg.colorScheme === "dark" ? "dark" : "light";  // native pickers follow Telegram day/night
     if(Object.keys(p).length) document.documentElement.classList.add("tg");
     for(var k in p) r.setProperty("--tg-theme-"+k.replace(/_/g,"-"), p[k]);
     try{tg.setHeaderColor(p.secondary_bg_color || "secondary_bg_color"); tg.setBackgroundColor(p.secondary_bg_color || "#f1f1f4")}catch(e){}
