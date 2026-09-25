@@ -46,6 +46,13 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1px solid var(--sec);background:var(--sec);color:var(--text);border-radius:22px;padding:0 14px;min-height:42px;font:inherit;font-size:15px}
 .chip.on{background:var(--btn);color:var(--btn-text);border-color:var(--btn)}
+.chip{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;display:inline-flex;align-items:center;gap:6px}
+.chip .n{display:none;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--btn-text);color:var(--btn);
+  font-size:13px;font-weight:700;line-height:22px;text-align:center;font-variant-numeric:tabular-nums}
+.chip.on .n{display:inline-block}
+.chip.bump{animation:bump .18s ease-out}
+@keyframes bump{50%{transform:scale(1.07)}}
+.sub{margin:-6px 0 10px;font-size:12px;color:var(--hint)}
 .step{display:flex;align-items:center;justify-content:space-between;min-height:50px}
 .step+.step{border-top:1px solid var(--sec)}
 .step .ctl{display:flex;align-items:center;gap:6px}
@@ -88,6 +95,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   </section>
   <section>
     <h2>🛋 Крупное</h2>
+    <p class="sub">тап — +1, двойной тап — −1</p>
     <div class="chips" id="bulky"></div>
     <input type="text" id="bulky_other" class="mt" maxlength="100" placeholder="Другое (пианино, велосипед…)">
   </section>
@@ -117,7 +125,10 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   var ITEMS = [["boxes","📦 Коробки"],["bags","👜 Сумки"],["packs","🛍 Пакеты"]];
   var $ = function(id){return document.getElementById(id)};
   function el(tag, attrs, html){var e=document.createElement(tag);for(var k in attrs||{})e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e}
-  function haptic(kind){try{tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged()}catch(e){}}
+  function haptic(kind){try{if(!(tg && tg.HapticFeedback)) return;
+    if(kind==="plus") tg.HapticFeedback.impactOccurred("light");
+    else if(kind==="minus") tg.HapticFeedback.impactOccurred("rigid");
+    else tg.HapticFeedback.selectionChanged()}catch(e){}}
 
   // ---- theme ----
   function applyTheme(){
@@ -176,12 +187,29 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   time.classList.add("empty"); time.onchange=function(){upd(time)};
   $("housing").onchange=function(){upd($("housing"))};
 
-  // ---- bulky chips ----
+  // ---- bulky chips: tap = +1, double tap (2nd tap within DBL ms) = net −1 vs. before the double tap ----
+  var BULKY_MAX = 20, DBL = 300, bulky = {}, lastTap = null;
+  var now = function(){return window.__clock ? window.__clock() : Date.now()};  // __clock: test hook
+  function setBulky(c, b, n){
+    n = Math.max(0, Math.min(BULKY_MAX, n)); bulky[b] = n;
+    c.classList.toggle("on", n > 0); c.querySelector(".n").textContent = n;
+    c.setAttribute("aria-label", b + (n ? ": " + n : ""));
+    c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
+  }
   BULKY.forEach(function(b){
-    var c = el("button",{type:"button","class":"chip","data-v":b}, b);
-    c.onclick = function(){c.classList.toggle("on"); haptic()};
+    var c = el("button",{type:"button","class":"chip","data-v":b}, b + '<span class="n">0</span>');
+    bulky[b] = 0;
+    c.onclick = function(){
+      var t = now();
+      if(lastTap && lastTap.b === b && t - lastTap.t <= DBL){   // double tap: undo the first +1, then −1
+        setBulky(c, b, lastTap.before - 1); lastTap = null; haptic("minus");
+      } else {
+        lastTap = {b:b, t:t, before:bulky[b]}; setBulky(c, b, bulky[b] + 1); haptic("plus");
+      }
+    };
     $("bulky").appendChild(c);
   });
+  function bulkyData(){var o = {}; BULKY.forEach(function(b){if(bulky[b] > 0) o[b] = bulky[b]}); return o}
 
   // ---- steppers ----
   var counts = {};
@@ -215,7 +243,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   function payload(){
     var data = {v:1, from:placeData(place.from), to:placeData(place.to), date:$("date").value, time:time.value,
       housing:$("housing").value,
-      bulky:Array.prototype.map.call(document.querySelectorAll(".chip.on"),function(c){return c.getAttribute("data-v")}),
+      bulky:bulkyData(),
       bulky_other:$("bulky_other").value.trim().slice(0,100), items:counts,
       movers:svc.movers.get(), ladder:svc.ladder.get(), comment:$("comment").value.trim().slice(0,500)};
     var s = JSON.stringify(data);
