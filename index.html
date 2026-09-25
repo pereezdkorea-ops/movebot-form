@@ -53,6 +53,19 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 .chip.bump{animation:bump .18s ease-out}
 @keyframes bump{50%{transform:scale(1.07)}}
 .sub{margin:-6px 0 10px;font-size:12px;color:var(--hint)}
+.tog{display:flex;align-items:center;gap:6px;margin:-12px;padding:12px;min-height:48px;cursor:pointer;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;outline:none}
+.tog .sum{flex:1;min-width:0;font-size:13px;font-weight:400;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  opacity:1;transition:opacity .2s}
+.tog .chev{flex:none;margin-left:auto;width:9px;height:9px;border-right:2px solid var(--hint);border-bottom:2px solid var(--hint);
+  transform:translateY(-2px) rotate(45deg);transition:transform .25s ease}
+.open>.tog .chev{transform:translateY(2px) rotate(-135deg)}
+.open>.tog .sum{opacity:0}
+.coll{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.coll>div{overflow:hidden;min-height:0;visibility:hidden;transition:visibility .25s}
+.open>.coll>div{visibility:visible}
+.open>.coll{grid-template-rows:1fr}
+.coll>div>div{padding-top:12px}
 .pick{display:flex;align-items:center;justify-content:space-between;min-height:52px}
 .pick+.pick{border-top:1px solid var(--sec)}
 .pick select{flex:none;width:76px;min-height:40px;height:40px;padding:0 8px;border-radius:10px;border:1px solid transparent;
@@ -100,9 +113,10 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     <div class="chips" id="bulky"></div>
     <input type="text" id="bulky_other" class="mt" maxlength="100" placeholder="Другое (пианино, велосипед…)">
   </section>
-  <section>
-    <h2>🎒 Вещи</h2>
-    <div id="items"></div>
+  <section id="s-items">
+    <h2 class="tog" id="items-head" role="button" tabindex="0" aria-expanded="false" aria-controls="items-body">🎒 Вещи
+      <span class="sum" id="items-sum"></span><span class="chev" aria-hidden="true"></span></h2>
+    <div class="coll" id="items-body"><div><div id="items"></div></div></div>
   </section>
   <section>
     <h2>🛠 Услуги</h2>
@@ -214,6 +228,15 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 
   // ---- item pickers: native <select> = iOS wheel picker; closed it shows only the chosen value ----
   var ITEM_MAX = 50, counts = {};
+  var ITEM_FORMS = {boxes:["коробка","коробки","коробок"], bags:["сумка","сумки","сумок"], packs:["пакет","пакета","пакетов"]};
+  function plural(n, f){var a = n % 10, b = n % 100; return f[(a===1 && b!==11) ? 0 : (a>=2 && a<=4 && (b<12 || b>14)) ? 1 : 2]}
+  function itemsSummary(){return ITEMS.filter(function(it){return counts[it[0]] > 0})
+    .map(function(it){return counts[it[0]] + " " + plural(counts[it[0]], ITEM_FORMS[it[0]])}).join(", ")}
+  function updSummary(){$("items-sum").textContent = itemsSummary()}
+  function toggleItems(){var sec = $("s-items"), open = !sec.classList.contains("open");
+    sec.classList.toggle("open", open); $("items-head").setAttribute("aria-expanded", String(open)); haptic()}
+  $("items-head").onclick = toggleItems;
+  $("items-head").onkeydown = function(e){if(e.key==="Enter" || e.key===" "){e.preventDefault(); toggleItems()}};
   ITEMS.forEach(function(it){
     counts[it[0]] = 0;
     var row = el("label",{"class":"pick"});
@@ -222,7 +245,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     for(var i=0;i<=ITEM_MAX;i++) sel.appendChild(el("option",{value:String(i)}, i ? String(i) : "—"));
     sel.onchange = function(){var n = parseInt(sel.value,10) || 0; n = Math.max(0, Math.min(ITEM_MAX, n));
       if(n !== counts[it[0]]) haptic("plus");
-      counts[it[0]] = n; sel.classList.toggle("on", n > 0)};
+      counts[it[0]] = n; sel.classList.toggle("on", n > 0); updSummary()};
     row.appendChild(sel); $("items").appendChild(row);
   });
 
@@ -276,7 +299,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     tg.sendData(s);   // Telegram closes the Mini App after sendData
     setTimeout(function(){try{tg.close()}catch(e){}}, 300);
   }
-  window.__submit = submit; window.__payload = payload;
+  window.__submit = submit; window.__payload = payload; window.__itemsSummary = itemsSummary;
 
   if(tg){ tg.ready(); tg.expand(); applyTheme(); tg.onEvent && tg.onEvent("themeChanged", applyTheme);
     try{tg.disableVerticalSwipes && tg.disableVerticalSwipes()}catch(e){} }
