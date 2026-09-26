@@ -152,11 +152,6 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     </div>
   </section>
   <section>
-    <h2>📦 Что поднимаем</h2>
-    <div class="chips" id="s_items"></div>
-    <input type="text" id="s_other" class="mt hide" maxlength="100" placeholder="Что ещё (пианино, стол…)">
-  </section>
-  <section>
     <h2>💬 Комментарий</h2>
     <textarea id="s_comment" maxlength="500" rows="2" placeholder="Необязательно: пожелания…"></textarea>
   </section>
@@ -172,7 +167,6 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   var inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));  // keyboard-button Mini Apps get empty initData
   var CITIES = ["Ансан","Инчон","Сихын","Сеул"];
   var SADARI = /(?:^|[?&#])mode=sadari(?:$|[&#])/.test(location.search + location.hash);
-  var S_ITEMS = ["Диван","Шкаф","Холодильник","Стиральная машина","Кровать","Коробки","Другое"];
   var BULKY = ["Кровать","Диван","Холодильник","Стиралка","Шкаф","Стол","Телевизор","Кондиционер"];
   var ITEMS = [["boxes","📦 Коробки"],["bags","👜 Сумки"],["packs","🛍 Пакеты"]];
   var $ = function(id){return document.getElementById(id)};
@@ -311,7 +305,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   }
   function validPlace(p){return !!p.city.value}
   // ---- «🪜 Только садарича» short form ----
-  var sItems = {}, sDir;
+  var sDir;
   (function(){
     CITIES.forEach(function(c){$("s_city").appendChild(el("option",{value:c},c))});
     for(var i=1;i<=9;i++) $("s_floor").appendChild(el("option",{value:String(i)}, i+" этаж"));
@@ -324,18 +318,10 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     for(var m=7*60;m<=21*60;m+=30){var t=pad(Math.floor(m/60))+":"+pad(m%60); st.appendChild(el("option",{value:t},t))}
     st.classList.add("empty"); st.onchange = function(){upd(st)};
     $("s_date").min = $("date").min;
-    S_ITEMS.forEach(function(x){
-      var c = el("button",{type:"button","class":"chip","data-v":x}, x);
-      c.onclick = function(){sItems[x] = !sItems[x]; c.classList.toggle("on", sItems[x]); haptic();
-        if(x === "Другое") $("s_other").classList.toggle("hide", !sItems[x])};
-      $("s_items").appendChild(c);
-    });
   })();
   function sadariPayload(){
     var data = {v:1, kind:"sadari", city:$("s_city").value, address:$("s_address").value.trim().slice(0,80),
       floor:$("s_floor").value, dir:sDir.get(), date:$("s_date").value, time:$("s_time").value,
-      items:S_ITEMS.filter(function(x){return sItems[x]}),
-      items_other: sItems["Другое"] ? $("s_other").value.trim().slice(0,100) : "",
       comment:$("s_comment").value.trim().slice(0,500)};
     var s = JSON.stringify(data);
     while(new TextEncoder().encode(s).length > 3500 && data.comment){data.comment = data.comment.slice(0,-20); s = JSON.stringify(data)}
