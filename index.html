@@ -125,7 +125,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   </section>
   <section>
     <h2>💬 Комментарий</h2>
-    <textarea id="comment" maxlength="500" rows="2" placeholder="Необязательно: пожелания…"></textarea>
+    <textarea id="comment" maxlength="500" rows="2" placeholder="Необязательно: адрес, пожелания…"></textarea>
   </section>
  </div>
  <div id="f-sadari" class="hide">
@@ -210,15 +210,13 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     for(var i=1;i<=30;i++) floor.appendChild(el("option",{value:String(i)}, i+" этаж"));
     floor.appendChild(el("option",{value:"basement"},"Подвал / полуподвал"));
     var lift = segment([[true,"🛗 Лифт есть"],[false,"Без лифта"]]);
-    var addr = el("input",{type:"text","class":"mt","data-addr":key,maxlength:"80",autocomplete:"off",
-                           placeholder:"Адрес или район (необязательно)","aria-label":"Адрес"});
     var r1 = el("div",{"class":"row"}); r1.appendChild(city); r1.appendChild(floor);
     var r2 = el("div",{"class":"mt"}); r2.appendChild(lift);
-    root.appendChild(r1); root.appendChild(addr); root.appendChild(r2);
+    root.appendChild(r1); root.appendChild(r2);
     city.onchange = function(){
       root.parentNode.classList.remove("err"); upd(city); clearMsg(); refresh()};
     floor.onchange = function(){upd(floor)};
-    place[key] = {city:city, addr:addr, floor:floor, lift:lift, section:root.parentNode};
+    place[key] = {city:city, floor:floor, lift:lift, section:root.parentNode};
   });
   function upd(sel){sel.classList.toggle("empty", !sel.value)}
   function clearMsg(){if(validPlace(place.from) && validPlace(place.to)) $("msg").textContent=""}
@@ -292,7 +290,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 
   // ---- payload ----
   function placeData(p){
-    return {city:p.city.value, other:"", addr:p.addr.value.trim().slice(0,80),
+    return {city:p.city.value, other:"",
             floor:p.floor.value, lift:p.lift.get()};
   }
   function payload(){
