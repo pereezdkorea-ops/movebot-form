@@ -70,11 +70,11 @@ h2{margin:0 0 10px;font-size:15px;font-weight:600}
 h2 small,h3 small{font-weight:400;font-size:13px;color:var(--hint);margin-left:6px}
 .lbl{font-size:13px;color:var(--hint);margin:0 0 6px 2px}
 .mt{margin-top:12px}
-select,input[type=tel]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);
+select,input[type=tel],.floorbtn{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);
   color:var(--text);font:inherit;outline:none;appearance:none;-webkit-appearance:none}
-select{background-image:linear-gradient(45deg,transparent 50%,var(--hint) 50%),linear-gradient(135deg,var(--hint) 50%,transparent 50%);
+select,.floorbtn{background-image:linear-gradient(45deg,transparent 50%,var(--hint) 50%),linear-gradient(135deg,var(--hint) 50%,transparent 50%);
   background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
-select.empty{color:var(--hint)}
+select.empty,.floorbtn.empty{color:var(--hint)}
 select:focus,input:focus{border-color:var(--on)}
 input::placeholder{color:var(--hint)}
 .chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -86,7 +86,14 @@ input::placeholder{color:var(--hint)}
 .chip input[type=date]{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;font-size:16px}
 .whint{margin:8px 0 0 2px;min-height:16px;font-size:12px;line-height:16px;color:var(--hint)}
 .fl{display:flex;gap:8px;align-items:center;margin-top:8px}
-.fl select{flex:0 0 112px;width:112px}
+.fl select,.fl .floorbtn{flex:0 0 112px;width:112px}
+/* one-tap pickers instead of native <select> (no «Готово» wheel): cities = 4 chips, floor = inline 1–20 grid */
+.pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.pick .chip{min-height:46px;padding:0 4px}
+.floorbtn{text-align:left;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.floorbtn.open{border-color:var(--on)}
+.fgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px}
+.fgrid .chip{min-height:40px;padding:0;font-variant-numeric:tabular-nums}
 .seg{display:flex;flex:1;min-width:0;background:var(--chip);border-radius:12px;padding:3px;min-height:48px}
 .seg button{flex:1;min-width:0;border:0;border-radius:9px;background:transparent;color:var(--text);font:inherit;font-size:15px;
   min-height:42px;padding:0 4px;white-space:nowrap;cursor:pointer;touch-action:manipulation}
@@ -141,12 +148,12 @@ h2{margin-bottom:8px}
   </section>
   <section id="b-from">
     <h2>Откуда</h2>
-    <select id="from_city" class="empty" aria-label="Откуда"></select>
+    <div class="pick empty" id="from_city" role="radiogroup" aria-label="Откуда"></div>
     <div class="fl" data-side="from"></div>
   </section>
   <section id="b-to">
     <h2>Куда</h2>
-    <select id="to_city" class="empty" aria-label="Куда"></select>
+    <div class="pick empty" id="to_city" role="radiogroup" aria-label="Куда"></div>
     <div class="fl" data-side="to"></div>
   </section>
   <section id="b-ladder">
@@ -239,13 +246,27 @@ h2{margin-bottom:8px}
     return box;
   }
   function upd(sel){sel.classList.toggle("empty", !sel.value)}
+  // one-tap picker (instead of a native <select> with its «Готово»): chips in `box`, box.value / "change" like a <select>;
+  // toggle = tapping the chosen chip again clears it
+  function tapPick(box, values, toggle, onPaint){
+    var st = {v:""}, chips = [];
+    function paint(){chips.forEach(function(c){var on = c.getAttribute("data-v") === st.v; c.classList.toggle("on", on); c.setAttribute("aria-checked", String(on))});
+      upd(box); onPaint && onPaint(st.v)}
+    values.forEach(function(v){
+      var c = el("button",{type:"button","class":"chip",role:"radio","data-v":v[0],"aria-checked":"false"}, '<span class="t">' + v[1] + '</span>');
+      c.onclick = function(){var nv = toggle && st.v === v[0] ? "" : v[0]; var changed = nv !== st.v; st.v = nv; paint(); haptic();
+        box.dispatchEvent(new CustomEvent("pick", {detail: changed})); if(changed) box.dispatchEvent(new Event("change"))};
+      chips.push(c); (box.__chips || box).appendChild(c);
+    });
+    Object.defineProperty(box, "value", {configurable:true, get:function(){return st.v},
+      set:function(x){x = x == null ? "" : String(x); st.v = values.some(function(v){return v[0] === x}) ? x : ""; paint()}});
+    paint();
+    return box;
+  }
 
   // ---- screen 1: cities ----
   ["from_city","to_city"].forEach(function(id){
-    var s = $(id);
-    s.appendChild(el("option",{value:"",disabled:"",selected:"",hidden:""},"Город…"));   // placeholder, not a value
-    CITIES.forEach(function(c){s.appendChild(el("option",{value:c},c))});
-    s.value = "";
+    var s = tapPick($(id), CITIES.map(function(c){return [c, c]}), false);   // a city is required: tap = choose, no unset
     s.onchange = function(){upd(s); s.parentNode.classList.remove("err"); clearMsg1()};
   });
 
@@ -300,14 +321,27 @@ h2{margin-bottom:8px}
   var side = {};
   document.querySelectorAll("[data-side]").forEach(function(root){
     var k = root.getAttribute("data-side");
-    var f = el("select",{"class":"empty","aria-label":"Этаж " + (k === "from" ? "откуда" : "куда")});
-    f.appendChild(el("option",{value:""},"Этаж…"));
-    for(var i = 1; i <= FLOOR_MAX; i++) f.appendChild(el("option",{value:String(i)}, i + " этаж"));
+    // floor: the button opens an inline 1–20 grid; one tap picks and closes (tap the chosen floor again = not specified)
+    var f = el("button",{type:"button","class":"floorbtn empty","aria-label":"Этаж " + (k === "from" ? "откуда" : "куда"),"aria-expanded":"false"}, "Этаж…");
+    var grid = el("div",{"class":"fgrid hide",role:"radiogroup","aria-label":"Этаж " + (k === "from" ? "откуда" : "куда")});
+    var fl = []; for(var i = 1; i <= FLOOR_MAX; i++) fl.push([String(i), String(i)]);
+    f.__chips = grid;
+    tapPick(f, fl, true, function(v){f.textContent = v ? v + " этаж" : "Этаж…"});
+    f.__grid = grid;
+    f.onclick = function(){var open = grid.classList.contains("hide"); closeFloors(); if(open){grid.classList.remove("hide"); f.classList.add("open");
+      f.setAttribute("aria-expanded", "true"); haptic(); reveal(grid)}};
+    f.addEventListener("pick", function(){closeFloors()});
     f.onchange = function(){upd(f); autoLadder()};
+    root.parentNode.insertBefore(grid, root.nextSibling);
     var lift = segment([[true,"Лифт есть"],[false,"Без лифта"]], function(){autoLadder()});   // sadari reacts live
     root.appendChild(f); root.appendChild(lift);
     side[k] = {floor:f, lift:lift};
   });
+  function reveal(e){var bar = document.querySelector("#scr1 .bar");   // keep the opened grid above the sticky «Дальше»
+    var over = e.getBoundingClientRect().bottom + 8 - (bar ? bar.getBoundingClientRect().top : window.innerHeight);
+    if(over > 0) window.scrollBy(0, over)}
+  function closeFloors(){["from","to"].forEach(function(k){if(!side[k]) return; side[k].floor.__grid.classList.add("hide");
+    side[k].floor.classList.remove("open"); side[k].floor.setAttribute("aria-expanded", "false")})}
   function sideData(k, city){var f = side[k].floor.value;
     return {city:$(city).value, floor:f ? parseInt(f, 10) : null, lift:side[k].lift.get()}}
 
@@ -424,6 +458,7 @@ h2{margin-bottom:8px}
   var useTgBack = !!(inTg && tg.BackButton && (!tg.isVersionAtLeast || tg.isVersionAtLeast("6.1")));
   var screen = 1;
   function show(n, push){
+    closeFloors();
     screen = n;
     [1,2,3,4].forEach(function(i){$("scr" + i).classList.toggle("hide", i !== n)});
     window.scrollTo(0, 0);
