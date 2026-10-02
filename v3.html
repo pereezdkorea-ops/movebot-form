@@ -99,6 +99,21 @@ input::placeholder{color:var(--hint)}
 .cnt button:disabled{color:var(--dis);cursor:default}
 .cnt .n{width:30px;text-align:center;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
 .cnt .n.zero{color:var(--hint);font-weight:400}
+/* «Что везём» on screen 1: six compact tiles, 3 per row (name over − n +), so screen 1 fits a phone */
+#items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#items .cnt{flex-direction:column;justify-content:center;gap:6px;min-width:0;min-height:0;padding:9px 3px 7px;border-radius:14px;background:var(--chip)}
+#items .cnt+.cnt{border-top:0}
+#items .name{max-width:100%;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#items .ctl{gap:2px}
+#items .cnt button{width:34px;height:34px;border-radius:17px;background:var(--card);font-size:20px}
+#items .cnt .n{width:24px}
+@media (max-width:379px){#items .cnt button{width:30px;height:30px}#items .cnt .n{width:22px}}
+/* a bit tighter so screen 1 (items + both cities + sadari) fits a 390×844 phone; the empty error line takes no room */
+section{padding:12px 12px 13px;margin-bottom:8px}
+h2{margin-bottom:8px}
+.top{padding:4px 2px 8px}
+.msg:empty{min-height:0;margin:0}
+.badge{position:absolute;top:18px;left:50%;transform:translateX(-50%);margin:0;z-index:4}   /* in the free middle of the top row */
 .auto{margin:8px 0 0 2px;font-size:13px;color:var(--text);font-weight:600}
 #phone_tg{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:12px;background:var(--chip);color:var(--text);font:inherit;
   font-size:15px;font-weight:600;cursor:pointer}
@@ -119,7 +134,11 @@ input::placeholder{color:var(--hint)}
 <main>
  <button type="button" class="theme" id="theme" aria-label="Тёмная тема">🌙</button>
  <div id="scr1">
-  <div class="top"><div class="row"><span class="step">1 / 2</span></div><h1>Маршрут и дата</h1></div>
+  <div class="top"><div class="row"><span class="step">1 / 2</span></div><h1>Что и куда</h1></div>
+  <section id="b-items">
+    <h2>Что везём</h2>
+    <div id="items"></div>
+  </section>
   <section id="b-from">
     <h2>Откуда</h2>
     <select id="from_city" class="empty" aria-label="Откуда"></select>
@@ -135,19 +154,15 @@ input::placeholder{color:var(--hint)}
     <div class="seg" id="ladder" role="group" aria-label="Садарича"></div>
     <p class="auto hide" id="ladder_auto" aria-live="polite"></p>
   </section>
-  <section id="b-when">
-    <h2>Когда</h2>
-    <div class="chips" id="when" role="group" aria-label="Когда"></div>
-    <p class="whint" id="when_hint" aria-live="polite"></p>
-  </section>
   <div class="bar"><p class="msg" id="msg1"></p><button type="button" class="main" id="next">Дальше</button></div>
  </div>
  <div id="scr2" class="hide">
   <div class="top"><div class="row"><button type="button" class="back" id="back">‹ Назад</button><span class="step">2 / 2</span></div>
-    <h1>Объём и телефон</h1></div>
-  <section id="b-items">
-    <h2>Что везём</h2>
-    <div id="items"></div>
+    <h1>Когда и телефон</h1></div>
+  <section id="b-when">
+    <h2>Когда</h2>
+    <div class="chips" id="when" role="group" aria-label="Когда"></div>
+    <p class="whint" id="when_hint" aria-live="polite"></p>
   </section>
   <section id="b-phone">
     <h2>Телефон</h2>
@@ -253,7 +268,7 @@ input::placeholder{color:var(--hint)}
     var d = whenDate(when.kind, picker.value);
     $("when_hint").textContent = !d ? "" : when.kind === "weekend" ? dayText(d) + " – " + dayText(addDays(d, 1)) : dayText(d);
   }
-  function whenChanged(){$("b-when").classList.remove("err"); clearMsg1()}
+  function whenChanged(){$("b-when").classList.remove("err"); if($("msg2").textContent === "Выберите дату") $("msg2").textContent = ""}
   WHEN.forEach(function(w){
     if(w[0] !== "date"){
       var c = el("button",{type:"button","class":"chip","data-w":w[0]}, '<span class="t">' + w[1] + '</span>');
@@ -408,7 +423,7 @@ input::placeholder{color:var(--hint)}
   window.addEventListener("popstate", function(e){var n = (e.state && e.state.s) || 1; if(n < screen && screen < 4) show(n, false)});
   if(useTgBack){ $("back").classList.add("hide"); $("back3").classList.add("hide"); tg.BackButton.onClick(goBack); }
   $("back").onclick = goBack; $("back3").onclick = goBack;
-  function clearMsg1(){if($("from_city").value && $("to_city").value && whenDate(when.kind, picker.value)) $("msg1").textContent = ""}
+  function clearMsg1(){if($("from_city").value && $("to_city").value) $("msg1").textContent = ""}
   function fail(msgId, sec, text){
     sec.classList.add("err"); $(msgId).textContent = text; haptic("error");
     try{sec.scrollIntoView({behavior:"smooth", block:"center"})}catch(e){}
@@ -418,13 +433,13 @@ input::placeholder{color:var(--hint)}
     miss.forEach(function(id){$(id).parentNode.classList.add("err")});
     if(miss.length) return fail("msg1", $(miss[0]).parentNode,
       miss.length === 2 ? "Выберите города «Откуда» и «Куда»" : miss[0] === "from_city" ? "Выберите город «Откуда»" : "Выберите город «Куда»");
-    if(!whenDate(when.kind, picker.value)) return fail("msg1", $("b-when"), "Выберите дату");
     $("msg1").textContent = "";
     haptic(); show(2, true); track("next");
   };
   var sending = false;
   $("send").onclick = function(){
     if(sending) return;
+    if(!whenDate(when.kind, picker.value)) return fail("msg2", $("b-when"), "Выберите дату");
     if(!normPhone($("phone").value))
       return fail("msg2", $("b-phone"), $("phone").value.trim() ? "Проверьте номер телефона — пример: 010-1234-5678" : "Укажите номер телефона");
     $("msg2").textContent = "";
@@ -507,7 +522,7 @@ input::placeholder{color:var(--hint)}
         }
         if(x.status === 429) return again("Слишком много заявок. Попробуйте позже.");
         if(x.status === 400 && x.j && x.j.field === "phone") return again("Проверьте номер телефона — пример: 010-1234-5678", $("b-phone"));
-        if(x.status === 400 && x.j && (x.j.field === "city" || x.j.field === "date")) return again("Проверьте маршрут и дату на первом шаге");
+        if(x.status === 400 && x.j && (x.j.field === "city" || x.j.field === "date")) return again("Проверьте маршрут и дату");
         again(NET_ERR);
       })
       .catch(function(){again(NET_ERR)});
