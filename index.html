@@ -167,7 +167,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   var inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));  // keyboard-button Mini Apps get empty initData
   var CITIES = ["Ансан","Инчон","Сихын","Сеул"];
   var SADARI = /(?:^|[?&#])mode=sadari(?:$|[&#])/.test(location.search + location.hash);
-  var BULKY = ["Кровать","Диван","Холодильник","Стиралка","Шкаф","Стол","Телевизор","Кондиционер"];
+  var BULKY = ["Кровать","Матрас","Диван","Холодильник","Стиралка","Шкаф","Стол","Телевизор","Кондиционер"];
   var ITEMS = [["boxes","📦 Коробки"],["bags","👜 Сумки"],["packs","🛍 Пакеты"]];
   var $ = function(id){return document.getElementById(id)};
   function el(tag, attrs, html){var e=document.createElement(tag);for(var k in attrs||{})e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e}
