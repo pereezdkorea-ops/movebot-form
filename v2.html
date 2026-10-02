@@ -85,7 +85,7 @@ input::placeholder{color:var(--hint)}
 .chip .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip input[type=date]{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;font-size:16px}
 .whint{margin:8px 0 0 2px;min-height:16px;font-size:12px;line-height:16px;color:var(--hint)}
-.fl{display:flex;gap:8px;align-items:center}
+.fl{display:flex;gap:8px;align-items:center;margin-top:8px}
 .fl select{flex:0 0 112px;width:112px}
 .seg{display:flex;flex:1;min-width:0;background:var(--chip);border-radius:12px;padding:3px;min-height:48px}
 .seg button{flex:1;min-width:0;border:0;border-radius:9px;background:transparent;color:var(--text);font:inherit;font-size:15px;
@@ -99,6 +99,21 @@ input::placeholder{color:var(--hint)}
 .cnt button:disabled{color:var(--dis);cursor:default}
 .cnt .n{width:30px;text-align:center;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
 .cnt .n.zero{color:var(--hint);font-weight:400}
+/* «Что везём» on screen 1: eight compact tiles, 4 per row (name over − n +), using the full card width, so screen 1 fits a phone */
+#items{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:0 -4px}
+#items .cnt{flex-direction:column;justify-content:center;gap:5px;min-width:0;min-height:0;padding:8px 1px 6px;border-radius:12px;background:var(--chip)}
+#items .cnt+.cnt{border-top:0}
+#items .name{max-width:100%;font-size:13px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#items .ctl{gap:1px}
+#items .cnt button{width:30px;height:30px;border-radius:15px;background:var(--card);font-size:19px}
+#items .cnt .n{width:16px;font-size:16px}
+@media (max-width:379px){#items .cnt button{width:27px;height:27px}#items .cnt .n{width:15px}#items .name{font-size:12px;letter-spacing:-.02em}}
+/* a bit tighter so screen 1 (items + both cities + sadari) fits a 390×844 phone; the empty error line takes no room */
+section{padding:12px 12px 13px;margin-bottom:8px}
+h2{margin-bottom:8px}
+.top{padding:4px 2px 8px}
+.msg:empty{min-height:0;margin:0}
+.badge{position:absolute;top:18px;left:50%;transform:translateX(-50%);margin:0;z-index:4}   /* in the free middle of the top row */
 .auto{margin:8px 0 0 2px;font-size:13px;color:var(--text);font-weight:600}
 #phone_tg{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:12px;background:var(--chip);color:var(--text);font:inherit;
   font-size:15px;font-weight:600;cursor:pointer}
@@ -119,38 +134,35 @@ input::placeholder{color:var(--hint)}
 <main>
  <button type="button" class="theme" id="theme" aria-label="Тёмная тема">🌙</button>
  <div id="scr1">
-  <div class="top"><div class="row"><span class="step">1 / 2</span></div><h1>Маршрут и дата</h1></div>
+  <div class="top"><div class="row"><span class="step">1 / 2</span></div></div>
+  <section id="b-items">
+    <h2>Что везём</h2>
+    <div id="items"></div>
+  </section>
   <section id="b-from">
     <h2>Откуда</h2>
     <select id="from_city" class="empty" aria-label="Откуда"></select>
+    <div class="fl" data-side="from"></div>
   </section>
   <section id="b-to">
     <h2>Куда</h2>
     <select id="to_city" class="empty" aria-label="Куда"></select>
+    <div class="fl" data-side="to"></div>
   </section>
-  <section id="b-when">
-    <h2>Когда</h2>
-    <div class="chips" id="when" role="group" aria-label="Когда"></div>
-    <p class="whint" id="when_hint" aria-live="polite"></p>
-  </section>
-  <section id="b-floors">
-    <h2>Этаж и лифт</h2>
-    <div class="lbl">Откуда</div><div class="fl" data-side="from"></div>
-    <div class="lbl mt">Куда</div><div class="fl" data-side="to"></div>
-    <div class="sub" id="b-ladder">
-      <h3>Садарича<small>подъёмник через окно</small></h3>
-      <div class="seg" id="ladder" role="group" aria-label="Садарича"></div>
-      <p class="auto hide" id="ladder_auto" aria-live="polite"></p>
-    </div>
+  <section id="b-ladder">
+    <h2>Садарича<small>подъёмник через окно</small></h2>
+    <div class="seg" id="ladder" role="group" aria-label="Садарича"></div>
+    <p class="auto hide" id="ladder_auto" aria-live="polite"></p>
   </section>
   <div class="bar"><p class="msg" id="msg1"></p><button type="button" class="main" id="next">Дальше</button></div>
  </div>
  <div id="scr2" class="hide">
   <div class="top"><div class="row"><button type="button" class="back" id="back">‹ Назад</button><span class="step">2 / 2</span></div>
-    <h1>Объём и телефон</h1></div>
-  <section id="b-items">
-    <h2>Что везём</h2>
-    <div id="items"></div>
+    <h1>Когда и телефон</h1></div>
+  <section id="b-when">
+    <h2>Когда</h2>
+    <div class="chips" id="when" role="group" aria-label="Когда"></div>
+    <p class="whint" id="when_hint" aria-live="polite"></p>
   </section>
   <section id="b-phone">
     <h2>Телефон</h2>
@@ -191,12 +203,16 @@ input::placeholder{color:var(--hint)}
                    : "https://movebot-site.pereezdkorea.workers.dev";
   var SITE_API = (typeof window.__siteApi === "string" ? window.__siteApi : SITE_API_URL).replace(/\/+$/, "");
   var Q = function(k){return new RegExp("(?:^|[?&])" + k + "=1(?:$|&)").test(location.search)};
-  var TG_SEND = !!(BOT && inTg && tg.sendData);                    // opened from the bot's keyboard button in Telegram
-  var SITE = !TG_SEND && !!SITE_API && !Q("preview");              // real submit to the Worker
-  var PREVIEW = !BOT && !SITE;                                     // ?preview=1 (or no Worker yet): nothing is ever sent
+  // v3 = review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
+  // no step counter) whatever the URL / Telegram; flip to false only when it replaces v2.html
+  var FORCE_PREVIEW = false;
+  var TG_SEND = !FORCE_PREVIEW && !!(BOT && inTg && tg.sendData);  // opened from the bot's keyboard button in Telegram
+  var SITE = !FORCE_PREVIEW && !TG_SEND && !!SITE_API && !Q("preview");   // real submit to the Worker
+  var PREVIEW = FORCE_PREVIEW || (!BOT && !SITE);                  // ?preview=1 (or no Worker yet): nothing is ever sent
   var IOS = (tg && tg.platform === "ios") || /iPhone|iPad|iPod/.test(navigator.userAgent);
   var CITIES = ["Ансан","Инчхон","Сихын","Сеул"];
-  var ITEMS = [["bed","Кровать"],["sofa","Диван"],["fridge","Холодильник"],["washer","Стиралка"],["wardrobe","Шкаф"],["tv","Телевизор"]];
+  var ITEMS = [["bed","Кровать"],["mattress","Матрас"],["sofa","Диван"],["fridge","Холодильник"],["washer","Стиралка"],["dryer","Сушилка"],
+               ["wardrobe","Шкаф"],["tv","Телевизор"]];                 // = movebot/form.py ITEMS2
   var ITEM_MAX = 20, FLOOR_MAX = 20;
   var CLIENT_MSG = "Приняли. Перезвоним в ближайшие минуты.";
   var $ = function(id){return document.getElementById(id)};
@@ -253,7 +269,7 @@ input::placeholder{color:var(--hint)}
     var d = whenDate(when.kind, picker.value);
     $("when_hint").textContent = !d ? "" : when.kind === "weekend" ? dayText(d) + " – " + dayText(addDays(d, 1)) : dayText(d);
   }
-  function whenChanged(){$("b-when").classList.remove("err"); clearMsg1()}
+  function whenChanged(){$("b-when").classList.remove("err"); if($("msg2").textContent === "Выберите дату") $("msg2").textContent = ""}
   WHEN.forEach(function(w){
     if(w[0] !== "date"){
       var c = el("button",{type:"button","class":"chip","data-w":w[0]}, '<span class="t">' + w[1] + '</span>');
@@ -308,7 +324,7 @@ input::placeholder{color:var(--hint)}
     set(0);
   });
 
-  // ---- «Садарича» (screen 1, under the floors): on by itself while a side is 3+ floor without a lift, updated live on
+  // ---- «Садарича» (screen 1, its own card right after «Откуда» / «Куда»): on by itself while a side is 3+ floor without a lift, updated live on
   //      every floor/lift change; any manual tap hands it over to the client (a manual «Не нужна» is never overridden) ----
   var ladderTouched = false, ladderAuto = false;
   var ladder = segment([[true,"Нужна"],[false,"Не нужна"]], function(){ladderTouched = true; ladderAuto = false; $("ladder_auto").classList.add("hide")});
@@ -347,7 +363,7 @@ input::placeholder{color:var(--hint)}
     if(!n){$("phone_note").classList.remove("hide"); return}
     $("phone").value = fmtPhone(n); $("phone_note").classList.add("hide"); $("phone").oninput(); haptic("success");
   }
-  var canContact = !!(inTg && tg.requestContact && (!tg.isVersionAtLeast || tg.isVersionAtLeast("6.9")));
+  var canContact = !FORCE_PREVIEW && !!(inTg && tg.requestContact && (!tg.isVersionAtLeast || tg.isVersionAtLeast("6.9")));
   if(canContact){
     $("phone_tg").onclick = function(){
       try{tg.requestContact(function(sent, r){
@@ -408,7 +424,7 @@ input::placeholder{color:var(--hint)}
   window.addEventListener("popstate", function(e){var n = (e.state && e.state.s) || 1; if(n < screen && screen < 4) show(n, false)});
   if(useTgBack){ $("back").classList.add("hide"); $("back3").classList.add("hide"); tg.BackButton.onClick(goBack); }
   $("back").onclick = goBack; $("back3").onclick = goBack;
-  function clearMsg1(){if($("from_city").value && $("to_city").value && whenDate(when.kind, picker.value)) $("msg1").textContent = ""}
+  function clearMsg1(){if($("from_city").value && $("to_city").value) $("msg1").textContent = ""}
   function fail(msgId, sec, text){
     sec.classList.add("err"); $(msgId).textContent = text; haptic("error");
     try{sec.scrollIntoView({behavior:"smooth", block:"center"})}catch(e){}
@@ -418,24 +434,24 @@ input::placeholder{color:var(--hint)}
     miss.forEach(function(id){$(id).parentNode.classList.add("err")});
     if(miss.length) return fail("msg1", $(miss[0]).parentNode,
       miss.length === 2 ? "Выберите города «Откуда» и «Куда»" : miss[0] === "from_city" ? "Выберите город «Откуда»" : "Выберите город «Куда»");
-    if(!whenDate(when.kind, picker.value)) return fail("msg1", $("b-when"), "Выберите дату");
     $("msg1").textContent = "";
     haptic(); show(2, true); track("next");
   };
   var sending = false;
   $("send").onclick = function(){
     if(sending) return;
+    if(!whenDate(when.kind, picker.value)) return fail("msg2", $("b-when"), "Выберите дату");
     if(!normPhone($("phone").value))
       return fail("msg2", $("b-phone"), $("phone").value.trim() ? "Проверьте номер телефона — пример: 010-1234-5678" : "Укажите номер телефона");
     $("msg2").textContent = "";
     var d = data(), s = JSON.stringify(d);
     window.__lastPayload = s; window.__lastCard = cardText(d);
     if(SITE) return siteSend(d);
-    if(BOT && !TG_SEND){ $("msg2").textContent = "Откройте форму из бота в Telegram"; return; }
     if(PREVIEW){
       $("card").textContent = cardText(d); $("client_msg").textContent = CLIENT_MSG;
       haptic("success"); show(3, true); return;
     }
+    if(BOT && !TG_SEND){ $("msg2").textContent = "Откройте форму из бота в Telegram"; return; }
     sending = true; haptic("success");
     var go = function(){
       tg.sendData(s);                                   // Telegram closes the Mini App after sendData
@@ -460,7 +476,7 @@ input::placeholder{color:var(--hint)}
     }catch(e){return null}
   }
   function track(step){                                 // -> a promise while the event is in flight, else null
-    if(!EV_API || !EV_SRC) return null;
+    if(FORCE_PREVIEW || !EV_API || !EV_SRC) return null;
     var sid = evSid(); if(!sid) return null;
     try{ if(sessionStorage.getItem("v2ev_" + step)) return null; sessionStorage.setItem("v2ev_" + step, "1"); }catch(e){return null}
     var b = {v:1, sid:sid, step:step, src:EV_SRC};
@@ -507,7 +523,7 @@ input::placeholder{color:var(--hint)}
         }
         if(x.status === 429) return again("Слишком много заявок. Попробуйте позже.");
         if(x.status === 400 && x.j && x.j.field === "phone") return again("Проверьте номер телефона — пример: 010-1234-5678", $("b-phone"));
-        if(x.status === 400 && x.j && (x.j.field === "city" || x.j.field === "date")) return again("Проверьте маршрут и дату на первом шаге");
+        if(x.status === 400 && x.j && (x.j.field === "city" || x.j.field === "date")) return again("Проверьте маршрут и дату");
         again(NET_ERR);
       })
       .catch(function(){again(NET_ERR)});
