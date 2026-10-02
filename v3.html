@@ -99,15 +99,15 @@ input::placeholder{color:var(--hint)}
 .cnt button:disabled{color:var(--dis);cursor:default}
 .cnt .n{width:30px;text-align:center;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
 .cnt .n.zero{color:var(--hint);font-weight:400}
-/* «Что везём» on screen 1: six compact tiles, 3 per row (name over − n +), so screen 1 fits a phone */
-#items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-#items .cnt{flex-direction:column;justify-content:center;gap:6px;min-width:0;min-height:0;padding:9px 3px 7px;border-radius:14px;background:var(--chip)}
+/* «Что везём» on screen 1: eight compact tiles, 4 per row (name over − n +), using the full card width, so screen 1 fits a phone */
+#items{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:0 -4px}
+#items .cnt{flex-direction:column;justify-content:center;gap:5px;min-width:0;min-height:0;padding:8px 1px 6px;border-radius:12px;background:var(--chip)}
 #items .cnt+.cnt{border-top:0}
-#items .name{max-width:100%;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#items .ctl{gap:2px}
-#items .cnt button{width:34px;height:34px;border-radius:17px;background:var(--card);font-size:20px}
-#items .cnt .n{width:24px}
-@media (max-width:379px){#items .cnt button{width:30px;height:30px}#items .cnt .n{width:22px}}
+#items .name{max-width:100%;font-size:13px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#items .ctl{gap:1px}
+#items .cnt button{width:30px;height:30px;border-radius:15px;background:var(--card);font-size:19px}
+#items .cnt .n{width:16px;font-size:16px}
+@media (max-width:379px){#items .cnt button{width:27px;height:27px}#items .cnt .n{width:15px}#items .name{font-size:12px;letter-spacing:-.02em}}
 /* a bit tighter so screen 1 (items + both cities + sadari) fits a 390×844 phone; the empty error line takes no room */
 section{padding:12px 12px 13px;margin-bottom:8px}
 h2{margin-bottom:8px}
@@ -211,7 +211,8 @@ h2{margin-bottom:8px}
   var PREVIEW = FORCE_PREVIEW || (!BOT && !SITE);                  // ?preview=1 (or no Worker yet): nothing is ever sent
   var IOS = (tg && tg.platform === "ios") || /iPhone|iPad|iPod/.test(navigator.userAgent);
   var CITIES = ["Ансан","Инчхон","Сихын","Сеул"];
-  var ITEMS = [["bed","Кровать"],["sofa","Диван"],["fridge","Холодильник"],["washer","Стиралка"],["wardrobe","Шкаф"],["tv","Телевизор"]];
+  var ITEMS = [["bed","Кровать"],["mattress","Матрас"],["sofa","Диван"],["fridge","Холодильник"],["washer","Стиралка"],["dryer","Сушилка"],
+               ["wardrobe","Шкаф"],["tv","Телевизор"]];                 // = movebot/form.py ITEMS2
   var ITEM_MAX = 20, FLOOR_MAX = 20;
   var CLIENT_MSG = "Приняли. Перезвоним в ближайшие минуты.";
   var $ = function(id){return document.getElementById(id)};
