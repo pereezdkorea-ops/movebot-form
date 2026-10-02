@@ -338,7 +338,7 @@ h2{margin-bottom:8px}
   function autoLadder(){
     if(ladderTouched) return;
     var n = autoFloor();
-    if(n){ladder.set(true); ladderAuto = true; $("ladder_auto").textContent = n + " этаж без лифта — включили сами, можно снять"}
+    if(n){ladder.set(true); ladderAuto = true; $("ladder_auto").textContent = n + " этаж без лифта"}
     else if(ladderAuto){ladder.set(null); ladderAuto = false}
     $("ladder_auto").classList.toggle("hide", !ladderAuto);
   }
