@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Позвонить</title>
+<style>
+html,body{margin:0;height:100%;font:18px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:#fff;color:#000}
+@media (prefers-color-scheme:dark){html,body{background:#17212b;color:#f5f5f5}}
+main{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;text-align:center}
+#call{display:block;width:100%;max-width:420px;padding:22px 16px;border-radius:16px;background:#2ea043;color:#fff;
+  font-size:24px;font-weight:700;text-decoration:none;box-sizing:border-box}
+#err{color:#e53935}
+.hide{display:none!important}
+p{margin:14px 0 0;font-size:14px;opacity:.6}
+</style>
+</head>
+<body>
+<main>
+  <a id="call" class="hide" href="#">📞 Позвонить</a>
+  <p id="hint" class="hide">Если звонок не начался — нажмите кнопку</p>
+  <div id="err" class="hide">Номер не указан или неверный</div>
+</main>
+<script>
+(function(){
+  "use strict";
+  // number comes in the #fragment (not sent to the server): call.html#01012345678 or call.html#+79161234567
+  var raw = "";
+  try{ raw = decodeURIComponent((location.hash || "").slice(1)); }catch(e){}
+  if(!raw){ var m = /[?&]p=([^&]*)/.exec(location.search); if(m){ try{ raw = decodeURIComponent(m[1]); }catch(e){} } }
+  var n = raw.replace(/[\s\-().]/g, "");
+  if(!/^\+?\d{6,15}$/.test(n)){ document.getElementById("err").classList.remove("hide"); return; }
+  var k = /^(02|01\d|0\d\d)(\d{3,4})(\d{4})$/.exec(n);
+  var shown = k ? k[1] + "-" + k[2] + "-" + k[3] : n;
+  var a = document.getElementById("call");
+  a.href = "tel:" + n;
+  a.textContent = "📞 Позвонить " + shown;
+  a.classList.remove("hide");
+  document.getElementById("hint").classList.remove("hide");
+  document.title = "📞 " + shown;
+  window.__tel = "tel:" + n;
+  if(!window.__noAutoDial) location.href = "tel:" + n;
+})();
+</script>
+</body>
+</html>
