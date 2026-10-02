@@ -118,7 +118,6 @@ h2{margin-bottom:8px}
 #phone_tg{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:12px;background:var(--chip);color:var(--text);font:inherit;
   font-size:15px;font-weight:600;cursor:pointer}
 .grey{margin:10px 2px 0;font-size:13px;color:var(--hint)}
-#phone_hint{margin-top:6px}
 .msg{color:var(--err);text-align:center;font-size:14px;min-height:18px;margin:2px 0 6px}
 .bar{position:sticky;bottom:0;padding:8px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(var(--bg0),var(--bg) 35%)}
 .main{display:block;width:100%;min-height:54px;border:0;border-radius:14px;background:var(--on);color:var(--on-text);font:inherit;
@@ -167,12 +166,11 @@ h2{margin-bottom:8px}
   </section>
   <section id="b-phone">
     <h2>Телефон</h2>
-    <!-- own <form> + name/autocomplete "tel": iOS Safari / Android Chrome offer the owner's number above the keyboard -->
+    <!-- own <form> + name/autocomplete "tel": lets the phone offer a saved number if it can (no promise in the text) -->
     <form id="phone_form" autocomplete="on" novalidate>
       <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel" enterkeyhint="done" maxlength="20"
              placeholder="010-1234-5678" aria-label="Телефон">
     </form>
-    <p class="grey hide" id="phone_hint">Нажмите на поле — телефон подскажет ваш номер</p>
     <button type="button" id="phone_tg">Поделиться номером</button>
     <p class="grey hide" id="phone_note">Введите номер вручную</p>
     <p class="grey" id="photo_note">Фото можно прислать в чат после отправки.</p>
@@ -368,7 +366,6 @@ h2{margin-bottom:8px}
   };
   $("phone").addEventListener("change", tidyPhone);
   $("phone_form").addEventListener("submit", function(e){e.preventDefault(); tidyPhone(); $("phone").blur()});   // «Готово» never reloads / sends
-  if(!inTg) $("phone_hint").classList.remove("hide");                // the site: the phone suggests the number; the bot has «Поделиться номером»
   function contactNumber(r){
     var c = r && r.responseUnsafe && r.responseUnsafe.contact, raw = c && c.phone_number ? String(c.phone_number) : "";
     if(!raw) return null;
