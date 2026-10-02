@@ -118,6 +118,7 @@ h2{margin-bottom:8px}
 #phone_tg{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:12px;background:var(--chip);color:var(--text);font:inherit;
   font-size:15px;font-weight:600;cursor:pointer}
 .grey{margin:10px 2px 0;font-size:13px;color:var(--hint)}
+#phone_hint{margin-top:6px}
 .msg{color:var(--err);text-align:center;font-size:14px;min-height:18px;margin:2px 0 6px}
 .bar{position:sticky;bottom:0;padding:8px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(var(--bg0),var(--bg) 35%)}
 .main{display:block;width:100%;min-height:54px;border:0;border-radius:14px;background:var(--on);color:var(--on-text);font:inherit;
@@ -166,13 +167,19 @@ h2{margin-bottom:8px}
   </section>
   <section id="b-phone">
     <h2>Телефон</h2>
-    <input type="tel" id="phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="010-1234-5678" aria-label="Телефон">
+    <!-- own <form> + name/autocomplete "tel": iOS Safari / Android Chrome offer the owner's number above the keyboard -->
+    <form id="phone_form" autocomplete="on" novalidate>
+      <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel" enterkeyhint="done" maxlength="20"
+             placeholder="010-1234-5678" aria-label="Телефон">
+    </form>
+    <p class="grey hide" id="phone_hint">Нажмите на поле — телефон подскажет ваш номер</p>
     <button type="button" id="phone_tg">Поделиться номером</button>
     <p class="grey hide" id="phone_note">Введите номер вручную</p>
     <p class="grey" id="photo_note">Фото можно прислать в чат после отправки.</p>
-    <div class="hp" aria-hidden="true"><label for="hp">Не заполняйте это поле</label>
-      <input type="text" id="hp" name="website" tabindex="-1" autocomplete="off"></div>
   </section>
+  <!-- honeypot: outside the phone form, not a phone/name field, never autofilled, hidden -->
+  <div class="hp" aria-hidden="true"><label for="hp">Не заполняйте это поле</label>
+    <input type="text" id="hp" name="website" tabindex="-1" autocomplete="off"></div>
   <div class="bar"><p class="msg" id="msg2"></p><button type="button" class="main" id="send">Отправить заявку</button></div>
  </div>
  <div id="scr3" class="hide">
@@ -351,7 +358,17 @@ h2{margin-bottom:8px}
     return /^(?:01[016789]\d{7,8}|02\d{7,8}|0(?:[3-6][1-5]|70)\d{7,8})$/.test(d) ? d : null;
   }
   function fmtPhone(n){var m = /^(02|01\d|0\d\d)(\d{3,4})(\d{4})$/.exec(n); return m ? m[1] + "-" + m[2] + "-" + m[3] : n}
-  $("phone").oninput = function(){$("b-phone").classList.remove("err"); if(/номер|телефон/.test($("msg2").textContent)) $("msg2").textContent = ""};
+  // autofill / paste (+82 10-…, 8210…, spaces) -> 010-XXXX-XXXX at once; plain typing is left alone until the field is left
+  var phoneLen = 0;
+  function tidyPhone(){var n = normPhone($("phone").value); if(n && $("phone").value !== fmtPhone(n)) $("phone").value = fmtPhone(n); phoneLen = $("phone").value.length}
+  $("phone").oninput = function(e){
+    var v = $("phone").value, jump = v.length - phoneLen >= 4 || (e && e.inputType && /^insert(FromPaste|ReplacementText)$/.test(e.inputType));
+    if(jump) tidyPhone(); else phoneLen = v.length;
+    $("b-phone").classList.remove("err"); if(/номер|телефон/.test($("msg2").textContent)) $("msg2").textContent = "";
+  };
+  $("phone").addEventListener("change", tidyPhone);
+  $("phone_form").addEventListener("submit", function(e){e.preventDefault(); tidyPhone(); $("phone").blur()});   // «Готово» never reloads / sends
+  if(!inTg) $("phone_hint").classList.remove("hide");                // the site: the phone suggests the number; the bot has «Поделиться номером»
   function contactNumber(r){
     var c = r && r.responseUnsafe && r.responseUnsafe.contact, raw = c && c.phone_number ? String(c.phone_number) : "";
     if(!raw) return null;
