@@ -369,7 +369,8 @@ input::placeholder{color:var(--hint)}
     $("msg2").textContent = "";
     var d = data(), s = JSON.stringify(d);
     window.__lastPayload = s; window.__lastCard = cardText(d);
-    if(PREVIEW || !(inTg && tg.sendData)){
+    if(BOT && !(inTg && tg.sendData)){ $("msg2").textContent = "Откройте форму из бота в Telegram"; return; }
+    if(PREVIEW){
       $("card").textContent = cardText(d); $("client_msg").textContent = CLIENT_MSG;
       haptic("success"); show(3, true); return;
     }
