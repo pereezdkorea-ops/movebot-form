@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f7">
+<meta name="robots" content="noindex">
+<title>Заявка на переезд</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+// day/night before the first paint: saved choice > Telegram (colorScheme / themeParams) > the system (prefers-color-scheme)
+(function(){
+  var KEY = "v2theme", root = document.documentElement, tg = window.Telegram && window.Telegram.WebApp;
+  var inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));
+  function saved(){try{var v = localStorage.getItem(KEY); return v === "dark" || v === "light" ? v : null}catch(e){return null}}
+  function lum(hex){var m = /^#?([0-9a-f]{6})$/i.exec(hex || ""); if(!m) return null; var n = parseInt(m[1], 16);
+    return (0.2126 * (n >> 16) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255)) / 255}
+  function system(){
+    if(inTg){
+      if(tg.colorScheme === "dark" || tg.colorScheme === "light") return tg.colorScheme;
+      var l = lum(tg.themeParams && tg.themeParams.bg_color); if(l !== null) return l < 0.5 ? "dark" : "light";
+    }
+    try{return window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"}catch(e){return "light"}
+  }
+  var BG = {light:"#f2f2f7", dark:"#000000"};
+  function apply(t){
+    root.setAttribute("data-theme", t);
+    var m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute("content", BG[t]);
+    if(inTg){try{tg.setHeaderColor(BG[t]); tg.setBackgroundColor(BG[t]); tg.setBottomBarColor && tg.setBottomBarColor(BG[t])}catch(e){}}
+    var b = document.getElementById("theme"); if(b){b.textContent = t === "dark" ? "☀️" : "🌙";
+      b.setAttribute("aria-label", t === "dark" ? "Светлая тема" : "Тёмная тема"); b.title = b.getAttribute("aria-label")}
+  }
+  function follow(){if(!saved()) apply(system())}       // no own choice yet -> follow Telegram / the system live
+  window.__theme = {
+    get: function(){return root.getAttribute("data-theme")},
+    toggle: function(){var t = window.__theme.get() === "dark" ? "light" : "dark"; try{localStorage.setItem(KEY, t)}catch(e){} apply(t); return t},
+    apply: apply, follow: follow, system: system, saved: saved, BG: BG
+  };
+  apply(saved() || system());
+  try{var mq = matchMedia("(prefers-color-scheme: dark)"); mq.addEventListener ? mq.addEventListener("change", follow) : mq.addListener(follow)}catch(e){}
+  if(inTg && tg.onEvent) tg.onEvent("themeChanged", follow);
+})();
+</script>
+<style>
+:root{--bg:#f2f2f7;--card:#fff;--text:#111;--hint:#8e8e93;--line:#e5e5ea;--chip:#f2f2f7;--on:#111;--on-text:#fff;--err:#e53935;--link:#2481cc;
+  --field:#fff;--dis:#c7c7cc;--bg0:rgba(242,242,247,0);color-scheme:light}
+/* night: black background, dark-grey cards, light active chip / main button; hints ≥ 4.5:1 on the cards */
+:root[data-theme="dark"]{--bg:#000;--card:#1c1c1e;--text:#f2f2f7;--hint:#a7a7ad;--line:#38383a;--chip:#2c2c2e;--on:#f2f2f7;--on-text:#111;
+  --err:#ff6961;--link:#5ac8fa;--field:#2c2c2e;--dis:#5a5a5e;--bg0:rgba(0,0,0,0);color-scheme:dark}
+.theme{position:absolute;top:12px;right:10px;z-index:5;width:34px;height:34px;padding:0;border:0;border-radius:17px;background:var(--card);
+  font-size:17px;line-height:34px;text-align:center;cursor:pointer;touch-action:manipulation;box-shadow:0 0 0 1px var(--line)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{position:relative;max-width:560px;margin:0 auto;padding:8px 12px 0}
+.hide{display:none!important}
+.badge{display:block;width:max-content;margin:8px auto 0;padding:3px 10px;border-radius:10px;background:#ffcc00;color:#111;
+  font-size:11px;font-weight:800;letter-spacing:.08em}
+.top{padding:6px 2px 10px}
+.top .row{display:flex;align-items:center;min-height:32px;padding-right:42px}   /* room for the ☀️/🌙 button */
+.back{border:0;background:none;color:var(--text);font:inherit;font-size:16px;font-weight:600;padding:6px 10px 6px 0;margin-right:auto;cursor:pointer}
+.step{margin-left:auto;font-size:13px;color:var(--hint)}
+h1{margin:2px 0 0;font-size:24px;font-weight:700;letter-spacing:-.01em}
+section{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px;border:1.5px solid transparent}
+section.err{border-color:var(--err)}
+h2{margin:0 0 10px;font-size:15px;font-weight:600}
+.sub{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.sub h3{margin:0 0 8px;font-size:15px;font-weight:600}
+h2 small,h3 small{font-weight:400;font-size:13px;color:var(--hint);margin-left:6px}
+.lbl{font-size:13px;color:var(--hint);margin:0 0 6px 2px}
+.mt{margin-top:12px}
+select,input[type=tel]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);
+  color:var(--text);font:inherit;outline:none;appearance:none;-webkit-appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--hint) 50%),linear-gradient(135deg,var(--hint) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+select.empty{color:var(--hint)}
+select:focus,input:focus{border-color:var(--on)}
+input::placeholder{color:var(--hint)}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chip{position:relative;display:flex;align-items:center;justify-content:center;min-width:0;min-height:44px;padding:0 8px;border:0;
+  border-radius:22px;background:var(--chip);color:var(--text);font:inherit;font-size:15px;cursor:pointer;touch-action:manipulation;
+  -webkit-user-select:none;user-select:none}
+.chip.on{background:var(--on);color:var(--on-text)}
+.chip .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip input[type=date]{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;font-size:16px}
+.whint{margin:8px 0 0 2px;min-height:16px;font-size:12px;line-height:16px;color:var(--hint)}
+.fl{display:flex;gap:8px;align-items:center;margin-top:8px}
+.fl select{flex:0 0 112px;width:112px}
+.seg{display:flex;flex:1;min-width:0;background:var(--chip);border-radius:12px;padding:3px;min-height:48px}
+.seg button{flex:1;min-width:0;border:0;border-radius:9px;background:transparent;color:var(--text);font:inherit;font-size:15px;
+  min-height:42px;padding:0 4px;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.seg button.on{background:var(--on);color:var(--on-text)}
+.cnt{display:flex;align-items:center;justify-content:space-between;min-height:52px}
+.cnt+.cnt{border-top:1px solid var(--line)}
+.cnt .ctl{display:flex;align-items:center;gap:6px}
+.cnt button{width:40px;height:40px;border:0;border-radius:20px;background:var(--chip);color:var(--text);font:inherit;font-size:22px;
+  line-height:1;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.cnt button:disabled{color:var(--dis);cursor:default}
+.cnt .n{width:30px;text-align:center;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.cnt .n.zero{color:var(--hint);font-weight:400}
+.auto{margin:8px 0 0 2px;font-size:13px;color:var(--text);font-weight:600}
+#phone_tg{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:12px;background:var(--chip);color:var(--text);font:inherit;
+  font-size:15px;font-weight:600;cursor:pointer}
+.grey{margin:10px 2px 0;font-size:13px;color:var(--hint)}
+.msg{color:var(--err);text-align:center;font-size:14px;min-height:18px;margin:2px 0 6px}
+.bar{position:sticky;bottom:0;padding:8px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(var(--bg0),var(--bg) 35%)}
+.main{display:block;width:100%;min-height:54px;border:0;border-radius:14px;background:var(--on);color:var(--on-text);font:inherit;
+  font-size:17px;font-weight:600;cursor:pointer;touch-action:manipulation}
+.card{margin:0;white-space:pre-wrap;word-break:break-word;font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.done{text-align:center;padding:56px 12px 24px}.done .ok{font-size:46px;line-height:1}.done h1{margin:14px 0 8px;font-size:22px}
+.main:disabled{opacity:.6}
+.bubble{display:inline-block;margin:0;padding:9px 12px;border-radius:16px 16px 16px 4px;background:var(--chip);font-size:15px}
+</style>
+</head>
+<body>
+<div id="badge" class="badge hide">ПРЕВЬЮ</div>
+<main>
+ <button type="button" class="theme" id="theme" aria-label="Тёмная тема">🌙</button>
+ <div id="scr1">
+  <div class="top"><div class="row"><span class="step">1 / 2</span></div><h1>Маршрут и дата</h1></div>
+  <section id="b-from">
+    <h2>Откуда</h2>
+    <select id="from_city" class="empty" aria-label="Откуда"></select>
+    <div class="fl" data-side="from"></div>
+  </section>
+  <section id="b-to">
+    <h2>Куда</h2>
+    <select id="to_city" class="empty" aria-label="Куда"></select>
+    <div class="fl" data-side="to"></div>
+  </section>
+  <section id="b-ladder">
+    <h2>Садарича<small>подъёмник через окно</small></h2>
+    <div class="seg" id="ladder" role="group" aria-label="Садарича"></div>
+    <p class="auto hide" id="ladder_auto" aria-live="polite"></p>
+  </section>
+  <section id="b-when">
+    <h2>Когда</h2>
+    <div class="chips" id="when" role="group" aria-label="Когда"></div>
+    <p class="whint" id="when_hint" aria-live="polite"></p>
+  </section>
+  <div class="bar"><p class="msg" id="msg1"></p><button type="button" class="main" id="next">Дальше</button></div>
+ </div>
+ <div id="scr2" class="hide">
+  <div class="top"><div class="row"><button type="button" class="back" id="back">‹ Назад</button><span class="step">2 / 2</span></div>
+    <h1>Объём и телефон</h1></div>
+  <section id="b-items">
+    <h2>Что везём</h2>
+    <div id="items"></div>
+  </section>
+  <section id="b-phone">
+    <h2>Телефон</h2>
+    <input type="tel" id="phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="010-1234-5678" aria-label="Телефон">
+    <button type="button" id="phone_tg">Поделиться номером</button>
+    <p class="grey hide" id="phone_note">Введите номер вручную</p>
+    <p class="grey" id="photo_note">Фото можно прислать в чат после отправки.</p>
+    <div class="hp" aria-hidden="true"><label for="hp">Не заполняйте это поле</label>
+      <input type="text" id="hp" name="website" tabindex="-1" autocomplete="off"></div>
+  </section>
+  <div class="bar"><p class="msg" id="msg2"></p><button type="button" class="main" id="send">Отправить заявку</button></div>
+ </div>
+ <div id="scr3" class="hide">
+  <div class="top"><div class="row"><button type="button" class="back" id="back3">‹ Назад</button></div><h1>Так уйдёт заявка</h1></div>
+  <section>
+    <h2>Карточка в группу «Заявки» <small>без кнопок</small></h2>
+    <pre class="card" id="card"></pre>
+  </section>
+  <section>
+    <h2>Сообщение клиенту</h2>
+    <p class="bubble" id="client_msg">Приняли. Перезвоним в ближайшие минуты.</p>
+  </section>
+  <p class="grey" style="text-align:center;margin-bottom:24px">Это превью — ничего никуда не отправлено.</p>
+ </div>
+ <div id="scr4" class="hide">
+  <div class="done"><div class="ok">✅</div><h1 id="done_msg">Приняли. Перезвоним в ближайшие минуты.</h1></div>
+ </div>
+</main>
+<script>
+(function(){
+  "use strict";
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));
+  var BOT = /(?:^|[?&])bot=1(?:$|&)/.test(location.search);      // opened from the bot's keyboard button
+  // website orders (outside Telegram): Cloudflare Worker site-worker/; tests override via window.__siteApi
+  // website orders: served by Cloudflare (pereezd.<sub>.workers.dev) -> same-origin /order; on GitHub Pages -> the API Worker
+  var SITE_API_URL = /\.workers\.dev$|^(127\.0\.0\.1|localhost)$/.test(location.hostname) ? location.origin
+                   : "https://movebot-site.pereezdkorea.workers.dev";
+  var SITE_API = (typeof window.__siteApi === "string" ? window.__siteApi : SITE_API_URL).replace(/\/+$/, "");
+  var Q = function(k){return new RegExp("(?:^|[?&])" + k + "=1(?:$|&)").test(location.search)};
+  // v3 = review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
+  // no step counter) whatever the URL / Telegram; flip to false only when it replaces v2.html
+  var FORCE_PREVIEW = true;
+  var TG_SEND = !FORCE_PREVIEW && !!(BOT && inTg && tg.sendData);  // opened from the bot's keyboard button in Telegram
+  var SITE = !FORCE_PREVIEW && !TG_SEND && !!SITE_API && !Q("preview");   // real submit to the Worker
+  var PREVIEW = FORCE_PREVIEW || (!BOT && !SITE);                  // ?preview=1 (or no Worker yet): nothing is ever sent
+  var IOS = (tg && tg.platform === "ios") || /iPhone|iPad|iPod/.test(navigator.userAgent);
+  var CITIES = ["Ансан","Инчхон","Сихын","Сеул"];
+  var ITEMS = [["bed","Кровать"],["sofa","Диван"],["fridge","Холодильник"],["washer","Стиралка"],["wardrobe","Шкаф"],["tv","Телевизор"]];
+  var ITEM_MAX = 20, FLOOR_MAX = 20;
+  var CLIENT_MSG = "Приняли. Перезвоним в ближайшие минуты.";
+  var $ = function(id){return document.getElementById(id)};
+  function el(tag, attrs, html){var e = document.createElement(tag); for(var k in attrs||{}) e.setAttribute(k, attrs[k]);
+    if(html != null) e.innerHTML = html; return e}
+  function haptic(kind){try{if(!(tg && tg.HapticFeedback)) return;
+    if(kind === "error" || kind === "success") tg.HapticFeedback.notificationOccurred(kind);
+    else tg.HapticFeedback.selectionChanged()}catch(e){}}
+  function segment(values, onTap){        // tap = select, tap again = not specified
+    var box = el("div",{"class":"seg",role:"group"}), st = {v:null};
+    function paint(){Array.prototype.forEach.call(box.children, function(c, i){c.classList.toggle("on", values[i][0] === st.v)})}
+    values.forEach(function(v){
+      var b = el("button",{type:"button"}, v[1]);
+      b.onclick = function(){st.v = st.v === v[0] ? null : v[0]; paint(); haptic(); onTap && onTap()};
+      box.appendChild(b);
+    });
+    box.get = function(){return st.v};
+    box.set = function(v){st.v = v; paint()};
+    return box;
+  }
+  function upd(sel){sel.classList.toggle("empty", !sel.value)}
+
+  // ---- screen 1: cities ----
+  ["from_city","to_city"].forEach(function(id){
+    var s = $(id);
+    s.appendChild(el("option",{value:"",disabled:"",selected:"",hidden:""},"Город…"));   // placeholder, not a value
+    CITIES.forEach(function(c){s.appendChild(el("option",{value:c},c))});
+    s.value = "";
+    s.onchange = function(){upd(s); s.parentNode.classList.remove("err"); clearMsg1()};
+  });
+
+  // ---- when: Сегодня / Завтра / Выходные / Другая дата; Korean (KST) days whatever the phone's zone ----
+  var pad = function(n){return (n<10?"0":"")+n};
+  var WD = ["вс","пн","вт","ср","чт","пт","сб"];
+  function nowMs(){return window.__now ? window.__now() : Date.now()}              // __now: test hook
+  function kstDay(off){var t = new Date(nowMs() + 9*3600e3);
+    return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() + off))}
+  function isoOf(t){return t.getUTCFullYear()+"-"+pad(t.getUTCMonth()+1)+"-"+pad(t.getUTCDate())}
+  function fromIso(s){var p = s.split("-"); return new Date(Date.UTC(+p[0], p[1]-1, +p[2]))}
+  function addDays(s, n){var t = fromIso(s); t.setUTCDate(t.getUTCDate() + n); return isoOf(t)}
+  function dayText(s){var t = fromIso(s), y = kstDay(0).getUTCFullYear();
+    return WD[t.getUTCDay()] + " " + pad(t.getUTCDate()) + "." + pad(t.getUTCMonth()+1) + (t.getUTCFullYear() !== y ? "." + t.getUTCFullYear() : "")}
+  function whenDate(kind, picked){            // «Выходные» = nearest Saturday (today if Saturday; on Sunday the next one)
+    if(kind === "today") return isoOf(kstDay(0));
+    if(kind === "tomorrow") return isoOf(kstDay(1));
+    if(kind === "weekend") return isoOf(kstDay(6 - kstDay(0).getUTCDay()));
+    return kind === "date" && /^\d{4}-\d\d-\d\d$/.test(picked || "") ? picked : "";
+  }
+  var WHEN = [["today","Сегодня"],["tomorrow","Завтра"],["weekend","Выходные"],["date","Другая дата"]];
+  var when = {kind:""}, picker, dateChip;
+  function paintWhen(){
+    Array.prototype.forEach.call($("when").children, function(c){c.classList.toggle("on", c.getAttribute("data-w") === when.kind)});
+    dateChip.querySelector(".t").textContent = when.kind === "date" && picker.value ? "📅 " + dayText(picker.value) : "Другая дата";
+    var d = whenDate(when.kind, picker.value);
+    $("when_hint").textContent = !d ? "" : when.kind === "weekend" ? dayText(d) + " – " + dayText(addDays(d, 1)) : dayText(d);
+  }
+  function whenChanged(){$("b-when").classList.remove("err"); clearMsg1()}
+  WHEN.forEach(function(w){
+    if(w[0] !== "date"){
+      var c = el("button",{type:"button","class":"chip","data-w":w[0]}, '<span class="t">' + w[1] + '</span>');
+      c.onclick = function(){when.kind = w[0]; picker.value = ""; paintWhen(); haptic(); whenChanged()};
+      $("when").appendChild(c); return;
+    }
+    dateChip = el("div",{"class":"chip","data-w":"date"}, '<span class="t">' + w[1] + '</span>');
+    picker = el("input",{type:"date","aria-label":"Другая дата",min:isoOf(kstDay(0))});
+    picker.addEventListener("click", function(e){        // Android/desktop: the system calendar wherever the chip is tapped
+      if(IOS || !picker.showPicker) return;               // iOS opens its own picker on tap
+      try{picker.showPicker(); e.preventDefault()}catch(x){}
+    });
+    var onPick = function(){
+      if(picker.value) when.kind = "date"; else if(when.kind === "date") when.kind = "";
+      paintWhen(); whenChanged();
+    };
+    picker.addEventListener("change", onPick); picker.addEventListener("input", onPick);
+    dateChip.appendChild(picker); $("when").appendChild(dateChip);
+  });
+  paintWhen();
+
+  // ---- floors + lifts ----
+  var side = {};
+  document.querySelectorAll("[data-side]").forEach(function(root){
+    var k = root.getAttribute("data-side");
+    var f = el("select",{"class":"empty","aria-label":"Этаж " + (k === "from" ? "откуда" : "куда")});
+    f.appendChild(el("option",{value:""},"Этаж…"));
+    for(var i = 1; i <= FLOOR_MAX; i++) f.appendChild(el("option",{value:String(i)}, i + " этаж"));
+    f.onchange = function(){upd(f); autoLadder()};
+    var lift = segment([[true,"Лифт есть"],[false,"Без лифта"]], function(){autoLadder()});   // sadari reacts live
+    root.appendChild(f); root.appendChild(lift);
+    side[k] = {floor:f, lift:lift};
+  });
+  function sideData(k, city){var f = side[k].floor.value;
+    return {city:$(city).value, floor:f ? parseInt(f, 10) : null, lift:side[k].lift.get()}}
+
+  // ---- screen 2: counters ----
+  var counts = {};
+  ITEMS.forEach(function(it){
+    counts[it[0]] = 0;
+    var row = el("div",{"class":"cnt","data-item":it[0]});
+    row.appendChild(el("span",{"class":"name"}, it[1]));
+    var ctl = el("div",{"class":"ctl"});
+    var minus = el("button",{type:"button","class":"minus","aria-label":"Меньше: " + it[1]}, "−");
+    var n = el("span",{"class":"n zero","aria-live":"polite"}, "0");
+    var plus = el("button",{type:"button","class":"plus","aria-label":"Больше: " + it[1]}, "+");
+    function set(v){v = Math.max(0, Math.min(ITEM_MAX, v)); counts[it[0]] = v; n.textContent = v;
+      n.classList.toggle("zero", v === 0); minus.disabled = v === 0; plus.disabled = v === ITEM_MAX}
+    minus.onclick = function(){if(counts[it[0]] > 0){set(counts[it[0]] - 1); haptic()}};
+    plus.onclick = function(){if(counts[it[0]] < ITEM_MAX){set(counts[it[0]] + 1); haptic()}};
+    ctl.appendChild(minus); ctl.appendChild(n); ctl.appendChild(plus); row.appendChild(ctl); $("items").appendChild(row);
+    set(0);
+  });
+
+  // ---- «Садарича» (screen 1, its own card right after «Откуда» / «Куда»): on by itself while a side is 3+ floor without a lift, updated live on
+  //      every floor/lift change; any manual tap hands it over to the client (a manual «Не нужна» is never overridden) ----
+  var ladderTouched = false, ladderAuto = false;
+  var ladder = segment([[true,"Нужна"],[false,"Не нужна"]], function(){ladderTouched = true; ladderAuto = false; $("ladder_auto").classList.add("hide")});
+  $("ladder").replaceWith(ladder); ladder.id = "ladder";
+  function autoFloor(){
+    var n = 0;
+    ["from","to"].forEach(function(k){var f = parseInt(side[k].floor.value, 10);
+      if(f >= 3 && side[k].lift.get() === false && f > n) n = f});
+    return n;
+  }
+  function autoLadder(){
+    if(ladderTouched) return;
+    var n = autoFloor();
+    if(n){ladder.set(true); ladderAuto = true; $("ladder_auto").textContent = n + " этаж без лифта — включили сами, можно снять"}
+    else if(ladderAuto){ladder.set(null); ladderAuto = false}
+    $("ladder_auto").classList.toggle("hide", !ladderAuto);
+  }
+
+  // ---- phone (same rules as the bot) ----
+  function normPhone(v){
+    var t = String(v||"").trim(), d = t.replace(/\D/g,"");
+    if(d.indexOf("82") === 0 && (t.charAt(0) === "+" || d.length >= 11)) d = "0" + d.slice(2).replace(/^0+/,"");
+    else if(t.charAt(0) === "+") return d.length >= 10 && d.length <= 15 ? "+" + d : null;
+    return /^(?:01[016789]\d{7,8}|02\d{7,8}|0(?:[3-6][1-5]|70)\d{7,8})$/.test(d) ? d : null;
+  }
+  function fmtPhone(n){var m = /^(02|01\d|0\d\d)(\d{3,4})(\d{4})$/.exec(n); return m ? m[1] + "-" + m[2] + "-" + m[3] : n}
+  $("phone").oninput = function(){$("b-phone").classList.remove("err"); if(/номер|телефон/.test($("msg2").textContent)) $("msg2").textContent = ""};
+  function contactNumber(r){
+    var c = r && r.responseUnsafe && r.responseUnsafe.contact, raw = c && c.phone_number ? String(c.phone_number) : "";
+    if(!raw) return null;
+    var d = raw.replace(/\D/g,"");
+    return normPhone(raw) || normPhone(/^(?:82|0)/.test(d) ? d : "+" + d);
+  }
+  function fillContact(r){
+    var n = contactNumber(r);
+    if(!n){$("phone_note").classList.remove("hide"); return}
+    $("phone").value = fmtPhone(n); $("phone_note").classList.add("hide"); $("phone").oninput(); haptic("success");
+  }
+  var canContact = !FORCE_PREVIEW && !!(inTg && tg.requestContact && (!tg.isVersionAtLeast || tg.isVersionAtLeast("6.9")));
+  if(canContact){
+    $("phone_tg").onclick = function(){
+      try{tg.requestContact(function(sent, r){
+        if(sent && r && r.responseUnsafe) fillContact(r); else if(!sent) $("phone_note").classList.remove("hide")})}
+      catch(e){$("phone_tg").classList.add("hide"); $("phone_note").classList.remove("hide")}
+    };
+    tg.onEvent && tg.onEvent("contactRequested", function(r){
+      if(r && r.status === "sent") fillContact(r); else if(r && r.status === "cancelled") $("phone_note").classList.remove("hide")});
+  } else if(PREVIEW){            // preview link outside the bot: show the button, explain on tap
+    $("phone_tg").onclick = function(){$("phone_note").classList.remove("hide")};
+  } else {
+    $("phone_tg").classList.add("hide");
+  }
+
+  // ---- card text: the same as the bot's (movebot/form.py move2_lines) ----
+  function sideText(p){var b = [p.city, p.floor ? p.floor + " эт" : "этаж не указан"];
+    if(p.lift === true) b.push("лифт есть"); else if(p.lift === false) b.push("без лифта"); return b.join(", ")}
+  function whenText(d){
+    if(!d.date) return "не указано";
+    if(d.when === "today") return "сегодня";
+    if(d.when === "tomorrow") return "завтра";
+    if(d.when === "weekend") return "выходные (" + dayText(d.date) + "–" + dayText(addDays(d.date, 1)) + ")";
+    return dayText(d.date);
+  }
+  function itemsText(items){
+    return ITEMS.filter(function(it){return items[it[0]] > 0})
+      .map(function(it, i){return (i ? it[1].toLowerCase() : it[1]) + " " + items[it[0]]}).join(", ");
+  }
+  function cardText(d){
+    var out = [sideText(d.from) + " → " + sideText(d.to), "Когда: " + whenText(d)], it = itemsText(d.items);
+    if(it) out.push(it);
+    if(d.ladder === true) out.push("Садарича: нужна"); else if(d.ladder === false) out.push("Садарича: не нужна");
+    out.push("Телефон: " + (d.phone ? fmtPhone(d.phone) : "не указан"));
+    return out.join("\n");
+  }
+  function data(){
+    var items = {}; ITEMS.forEach(function(it){items[it[0]] = counts[it[0]]});
+    var d = whenDate(when.kind, picker.value);
+    return {v:2, kind:"move2", from:sideData("from","from_city"), to:sideData("to","to_city"), when:d ? when.kind : "", date:d,
+            items:items, ladder:ladder.get(), phone:normPhone($("phone").value) || ""};
+  }
+
+  // ---- navigation ----
+  var useTgBack = !!(inTg && tg.BackButton && (!tg.isVersionAtLeast || tg.isVersionAtLeast("6.1")));
+  var screen = 1;
+  function show(n, push){
+    screen = n;
+    [1,2,3,4].forEach(function(i){$("scr" + i).classList.toggle("hide", i !== n)});
+    window.scrollTo(0, 0);
+    if(useTgBack){ if(n > 1) tg.BackButton.show(); else tg.BackButton.hide(); }
+    if(push && !useTgBack){ try{history.pushState({s:n}, "")}catch(e){} }
+  }
+  function goBack(){
+    if(screen === 1) return;
+    if(!useTgBack && history.state && history.state.s > 1){ history.back(); return; }
+    show(screen - 1, false);
+  }
+  window.addEventListener("popstate", function(e){var n = (e.state && e.state.s) || 1; if(n < screen && screen < 4) show(n, false)});
+  if(useTgBack){ $("back").classList.add("hide"); $("back3").classList.add("hide"); tg.BackButton.onClick(goBack); }
+  $("back").onclick = goBack; $("back3").onclick = goBack;
+  function clearMsg1(){if($("from_city").value && $("to_city").value && whenDate(when.kind, picker.value)) $("msg1").textContent = ""}
+  function fail(msgId, sec, text){
+    sec.classList.add("err"); $(msgId).textContent = text; haptic("error");
+    try{sec.scrollIntoView({behavior:"smooth", block:"center"})}catch(e){}
+  }
+  $("next").onclick = function(){
+    var miss = ["from_city","to_city"].filter(function(id){return !$(id).value});
+    miss.forEach(function(id){$(id).parentNode.classList.add("err")});
+    if(miss.length) return fail("msg1", $(miss[0]).parentNode,
+      miss.length === 2 ? "Выберите города «Откуда» и «Куда»" : miss[0] === "from_city" ? "Выберите город «Откуда»" : "Выберите город «Куда»");
+    if(!whenDate(when.kind, picker.value)) return fail("msg1", $("b-when"), "Выберите дату");
+    $("msg1").textContent = "";
+    haptic(); show(2, true); track("next");
+  };
+  var sending = false;
+  $("send").onclick = function(){
+    if(sending) return;
+    if(!normPhone($("phone").value))
+      return fail("msg2", $("b-phone"), $("phone").value.trim() ? "Проверьте номер телефона — пример: 010-1234-5678" : "Укажите номер телефона");
+    $("msg2").textContent = "";
+    var d = data(), s = JSON.stringify(d);
+    window.__lastPayload = s; window.__lastCard = cardText(d);
+    if(SITE) return siteSend(d);
+    if(PREVIEW){
+      $("card").textContent = cardText(d); $("client_msg").textContent = CLIENT_MSG;
+      haptic("success"); show(3, true); return;
+    }
+    if(BOT && !TG_SEND){ $("msg2").textContent = "Откройте форму из бота в Telegram"; return; }
+    sending = true; haptic("success");
+    var go = function(){
+      tg.sendData(s);                                   // Telegram closes the Mini App after sendData
+      setTimeout(function(){try{tg.close()}catch(e){}}, 300);
+    };
+    var ev = track("sent");                             // let the step counter leave first (max 0.7 s)
+    if(ev){ var once = false, fire = function(){if(!once){once = true; go()}}; ev.then(fire, fire); setTimeout(fire, 700); }
+    else go();
+  };
+  // ---- anonymous step counter for /stats: open -> next («Дальше») -> sent, each once per session ----
+  //      random session id (sessionStorage), no personal data; preview pages and tests are never counted
+  var EV_API = (typeof window.__eventApi === "string" ? window.__eventApi : SITE_API_URL).replace(/\/+$/, "");
+  var EV_SRC = TG_SEND ? "bot" : SITE ? "site" : "";
+  var EV_REF = (function(){var m = /(?:^|[?&])(?:ref|start)=([^&#]*)/.exec(location.search), r = "";
+    try{r = m ? decodeURIComponent(m[1]) : ""}catch(e){} return r.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 32)})();
+  function evSid(){
+    try{
+      var sid = sessionStorage.getItem("v2sid");
+      if(!sid){ var a = new Uint8Array(12); crypto.getRandomValues(a);
+        sid = Array.prototype.map.call(a, function(x){return ("0" + x.toString(16)).slice(-2)}).join(""); sessionStorage.setItem("v2sid", sid); }
+      return sid;
+    }catch(e){return null}
+  }
+  function track(step){                                 // -> a promise while the event is in flight, else null
+    if(FORCE_PREVIEW || !EV_API || !EV_SRC) return null;
+    var sid = evSid(); if(!sid) return null;
+    try{ if(sessionStorage.getItem("v2ev_" + step)) return null; sessionStorage.setItem("v2ev_" + step, "1"); }catch(e){return null}
+    var b = {v:1, sid:sid, step:step, src:EV_SRC};
+    if(EV_REF) b.ref = EV_REF;
+    if(Q("x")) b.x = true;                              // the bot marks own accounts
+    if(Q("test")) b.test = true;
+    var u = inTg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if(u && u.id) b.tgid = u.id;                        // only compared with the exclude list on the Worker, never stored
+    var body = JSON.stringify(b);
+    (window.__events = window.__events || []).push(b);
+    try{
+      return fetch(EV_API + "/event", {method:"POST", headers:{"Content-Type":"text/plain;charset=UTF-8"}, body:body,
+                                       mode:"cors", credentials:"omit", keepalive:true}).catch(function(){});
+    }catch(e){
+      try{navigator.sendBeacon && navigator.sendBeacon(EV_API + "/event", new Blob([body], {type:"text/plain"}))}catch(x){}
+      return null;
+    }
+  }
+  window.__track = track;
+
+  var DONE_MSG = "Приняли. Перезвоним в ближайшие минуты.";
+  var NET_ERR = "Не получилось отправить — проверьте интернет и попробуйте ещё раз.";
+  function siteSend(d){
+    var b = $("send"), label = b.textContent;
+    sending = true; b.disabled = true; b.textContent = "Отправляем…";
+    var body = Object.assign({}, d, {hp: $("hp").value || ""});
+    if(Q("test")) body.test = true;
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function(){ctl && ctl.abort()}, 15000);
+    function again(text, sec){
+      clearTimeout(timer); sending = false; b.disabled = false; b.textContent = label;
+      sec ? fail("msg2", sec, text) : ($("msg2").textContent = text, haptic("error"));
+    }
+    window.__sitePost = JSON.stringify(body);
+    fetch(SITE_API + "/order", {method:"POST", headers:{"Content-Type":"text/plain;charset=UTF-8"}, body:window.__sitePost,
+                                mode:"cors", credentials:"omit", signal: ctl ? ctl.signal : undefined})
+      .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {status:r.status, j:j}})})
+      .then(function(x){
+        if(x.status === 200 && x.j && x.j.ok){
+          clearTimeout(timer); haptic("success"); track("sent");
+          $("done_msg").textContent = DONE_MSG; show(4, false);
+          try{history.replaceState({s:4}, "")}catch(e){}
+          return;
+        }
+        if(x.status === 429) return again("Слишком много заявок. Попробуйте позже.");
+        if(x.status === 400 && x.j && x.j.field === "phone") return again("Проверьте номер телефона — пример: 010-1234-5678", $("b-phone"));
+        if(x.status === 400 && x.j && (x.j.field === "city" || x.j.field === "date")) return again("Проверьте маршрут и дату на первом шаге");
+        again(NET_ERR);
+      })
+      .catch(function(){again(NET_ERR)});
+  }
+  window.__site = SITE; window.__data = data; window.__cardText = cardText; window.__preview = PREVIEW; window.__normPhone = normPhone;
+  window.__screen = function(){return screen};
+
+  if(PREVIEW){ $("badge").classList.remove("hide"); document.title = "ПРЕВЬЮ · Заявка на переезд"; }
+  if(SITE){ $("photo_note").classList.add("hide"); }                 // no chat to send photos to
+  track("open");
+  $("theme").onclick = function(){window.__theme.toggle(); haptic()};
+  window.__theme.apply(window.__theme.get());                       // paints the button (it did not exist in <head>)
+  if(tg){ try{tg.ready(); tg.expand();
+    tg.MainButton && tg.MainButton.hide(); tg.disableVerticalSwipes && tg.disableVerticalSwipes()}catch(e){} }
+})();
+</script>
+</body>
+</html>
