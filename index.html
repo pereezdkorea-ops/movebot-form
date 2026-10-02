@@ -79,6 +79,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
 .hide{display:none}
 .note{color:var(--hint);font-size:13px;text-align:center;margin:6px 0 0}
 #fallback{width:100%;min-height:50px;border:0;border-radius:12px;background:var(--btn);color:var(--btn-text);font:inherit;font-weight:600}
+#phone_tg{width:100%;min-height:44px;margin-top:8px;border:0;border-radius:10px;background:var(--sec);color:var(--link);
+  font:inherit;font-size:15px;font-weight:600;touch-action:manipulation}
 #msg{color:var(--err);text-align:center;font-size:14px;min-height:18px;margin:4px 0}
 </style>
 </head>
@@ -159,6 +161,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   <section id="s-phone">
     <h2>📞 Ваш телефон <span class="req">обязательно</span></h2>
     <input type="tel" id="phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="010-1234-5678" aria-label="Телефон">
+    <button type="button" id="phone_tg" class="hide">📱 Поделиться номером</button>
+    <p class="sub hide" id="phone_note" style="margin:6px 0 0">Введите номер вручную</p>
   </section>
   <div id="msg"></div>
   <button id="fallback" class="hide" type="button">Отправить заявку</button>
@@ -311,13 +315,49 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     return s;
   }
   function validPlace(p){return !!p.city.value}
-  // Korean phone: 010/011/016-019 mobile, 02 / 0xx / 070 landline, +82 forms -> digits (9–11) or null
+  // Korean phone: 010/011/016-019 mobile, 02 / 0xx / 070 landline, +82 forms -> digits (9–11);
+  // other countries only with «+» (10–15 digits) -> "+<digits>"; else null. Same rules as the bot.
   function normPhone(v){
     var t = String(v||"").trim(), d = t.replace(/\D/g,"");
     if(d.indexOf("82") === 0 && (t.charAt(0) === "+" || d.length >= 11)) d = "0" + d.slice(2).replace(/^0+/,"");
+    else if(t.charAt(0) === "+") return d.length >= 10 && d.length <= 15 ? "+" + d : null;
     return /^(?:01[016789]\d{7,8}|02\d{7,8}|0(?:[3-6][1-5]|70)\d{7,8})$/.test(d) ? d : null;
   }
-  $("phone").oninput = function(){$("s-phone").classList.remove("err"); if(/телефон/.test($("msg").textContent)) $("msg").textContent=""; refresh()};
+  function fmtPhone(n){
+    var m = /^(02|01\d|0\d\d)(\d{3,4})(\d{4})$/.exec(n);
+    return m ? m[1] + "-" + m[2] + "-" + m[3] : n;
+  }
+  function phoneOk(){$("s-phone").classList.remove("err"); if(/телефон/.test($("msg").textContent)) $("msg").textContent=""; refresh()}
+  $("phone").oninput = phoneOk;
+  // ---- «📱 Поделиться номером»: Telegram.WebApp.requestContact (Bot API 6.9+) ----
+  function contactNumber(r){         // Telegram gives "821012345678" / "79161234567" (often without «+»)
+    var c = r && r.responseUnsafe && r.responseUnsafe.contact, raw = c && c.phone_number ? String(c.phone_number) : "";
+    if(!raw) return null;
+    var d = raw.replace(/\D/g,"");
+    return normPhone(raw) || normPhone(/^(?:82|0)/.test(d) ? d : "+" + d);
+  }
+  function fillContact(r){
+    var n = contactNumber(r);
+    if(!n){ $("phone_note").classList.remove("hide"); return; }
+    $("phone").value = fmtPhone(n); $("phone_note").classList.add("hide"); phoneOk();
+    try{tg.HapticFeedback.notificationOccurred("success")}catch(e){}
+  }
+  var canContact = !!(inTg && tg.requestContact && (!tg.isVersionAtLeast || tg.isVersionAtLeast("6.9")));
+  if(canContact){
+    $("phone_tg").classList.remove("hide");
+    $("phone_tg").onclick = function(){
+      try{
+        tg.requestContact(function(sent, r){
+          if(sent && r && r.responseUnsafe) fillContact(r);
+          else if(!sent) $("phone_note").classList.remove("hide");    // declined
+          // sent but no data in the callback yet -> «contactRequested» event below fills it
+        });
+      }catch(e){ $("phone_tg").classList.add("hide"); $("phone_note").classList.remove("hide"); }
+    };
+    tg.onEvent && tg.onEvent("contactRequested", function(r){
+      if(r && r.status === "sent") fillContact(r); else if(r && r.status === "cancelled") $("phone_note").classList.remove("hide");
+    });
+  }
   // ---- «🪜 Только садарича» short form ----
   var sDir;
   (function(){
@@ -379,7 +419,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     setTimeout(function(){try{tg.close()}catch(e){}}, 300);
   }
   window.__submit = submit; window.__payload = payload; window.__itemsSummary = itemsSummary;
-  window.__sadariPayload = sadariPayload; window.__sadari = SADARI; window.__normPhone = normPhone;
+  window.__sadariPayload = sadariPayload; window.__sadari = SADARI; window.__normPhone = normPhone; window.__fmtPhone = fmtPhone;
   if(SADARI){ $("f-move").classList.add("hide"); $("f-sadari").classList.remove("hide");
     document.title = "Садарича"; }
 
