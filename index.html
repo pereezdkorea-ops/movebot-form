@@ -26,7 +26,7 @@ h2{margin:0 0 10px;font-size:15px;font-weight:600;display:flex;align-items:cente
 h2 .req{color:var(--hint);font-weight:400;font-size:13px;margin-left:auto}
 .row{display:flex;gap:8px;align-items:center}
 .row>*{flex:1;min-width:0}
-select,input[type=text],input[type=date],textarea{
+select,input[type=text],input[type=tel],input[type=date],textarea{
   width:100%;min-height:46px;padding:10px 12px;border:1px solid transparent;border-radius:10px;
   background:var(--sec);color:var(--text);font:inherit;outline:none;appearance:none;-webkit-appearance:none}
 select{background-image:linear-gradient(45deg,transparent 50%,var(--hint) 50%),linear-gradient(135deg,var(--hint) 50%,transparent 50%);
@@ -156,9 +156,13 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     <textarea id="s_comment" maxlength="500" rows="2" placeholder="Необязательно: пожелания…"></textarea>
   </section>
  </div>
+  <section id="s-phone">
+    <h2>📞 Ваш телефон <span class="req">обязательно</span></h2>
+    <input type="tel" id="phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="010-1234-5678" aria-label="Телефон">
+  </section>
   <div id="msg"></div>
   <button id="fallback" class="hide" type="button">Отправить заявку</button>
-  <p class="note">Номер телефона бот спросит после отправки. Фото можно прислать в чат.</p>
+  <p class="note">Фото можно прислать в чат после отправки.</p>
 </main>
 <script>
 (function(){
@@ -300,12 +304,20 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
       housing:$("housing").value,
       bulky:bulkyData(),
       bulky_other:$("bulky_other").value.trim().slice(0,100), items:counts,
-      movers:svc.movers.get(), ladder:svc.ladder.get(), comment:$("comment").value.trim().slice(0,500)};
+      movers:svc.movers.get(), ladder:svc.ladder.get(), comment:$("comment").value.trim().slice(0,500),
+      phone:normPhone($("phone").value) || ""};
     var s = JSON.stringify(data);
     while(new TextEncoder().encode(s).length > 3500 && data.comment){data.comment = data.comment.slice(0,-20); s = JSON.stringify(data)}
     return s;
   }
   function validPlace(p){return !!p.city.value}
+  // Korean phone: 010/011/016-019 mobile, 02 / 0xx / 070 landline, +82 forms -> digits (9–11) or null
+  function normPhone(v){
+    var t = String(v||"").trim(), d = t.replace(/\D/g,"");
+    if(d.indexOf("82") === 0 && (t.charAt(0) === "+" || d.length >= 11)) d = "0" + d.slice(2).replace(/^0+/,"");
+    return /^(?:01[016789]\d{7,8}|02\d{7,8}|0(?:[3-6][1-5]|70)\d{7,8})$/.test(d) ? d : null;
+  }
+  $("phone").oninput = function(){$("s-phone").classList.remove("err"); if(/телефон/.test($("msg").textContent)) $("msg").textContent=""; refresh()};
   // ---- «🪜 Только садарича» short form ----
   var sDir;
   (function(){
@@ -324,14 +336,14 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
   function sadariPayload(){
     var data = {v:1, kind:"sadari", city:$("s_city").value, address:$("s_address").value.trim().slice(0,80),
       floor:$("s_floor").value, dir:sDir.get(), date:$("s_date").value, time:$("s_time").value,
-      comment:$("s_comment").value.trim().slice(0,500)};
+      comment:$("s_comment").value.trim().slice(0,500), phone:normPhone($("phone").value) || ""};
     var s = JSON.stringify(data);
     while(new TextEncoder().encode(s).length > 3500 && data.comment){data.comment = data.comment.slice(0,-20); s = JSON.stringify(data)}
     return s;
   }
   function refresh(){
     if(!inTg) return;
-    var ok = SADARI ? !!$("s_city").value : (validPlace(place.from) && validPlace(place.to));
+    var ok = (SADARI ? !!$("s_city").value : (validPlace(place.from) && validPlace(place.to))) && !!normPhone($("phone").value);
     tg.MainButton.setParams({text:"Отправить заявку", color: ok ? (tg.themeParams.button_color||"#2481cc") : (tg.themeParams.hint_color||"#8a8a8e")});
   }
   var sending = false;
@@ -351,6 +363,13 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
       try{tg.HapticFeedback.notificationOccurred("error")}catch(e){}
       return;
     }
+    if(!normPhone($("phone").value)){
+      $("s-phone").classList.add("err");
+      $("msg").textContent = $("phone").value.trim() ? "Проверьте номер телефона — пример: 010-1234-5678" : "Укажите номер телефона";
+      $("s-phone").scrollIntoView({behavior:"smooth",block:"center"});
+      try{tg.HapticFeedback.notificationOccurred("error")}catch(e){}
+      return;
+    }
     $("msg").textContent = "";
     var s = SADARI ? sadariPayload() : payload();
     if(!inTg){ console.log("sendData", s); $("msg").textContent = "Откройте форму из бота в Telegram"; window.__lastPayload = s; return; }
@@ -360,7 +379,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--btn)}
     setTimeout(function(){try{tg.close()}catch(e){}}, 300);
   }
   window.__submit = submit; window.__payload = payload; window.__itemsSummary = itemsSummary;
-  window.__sadariPayload = sadariPayload; window.__sadari = SADARI;
+  window.__sadariPayload = sadariPayload; window.__sadari = SADARI; window.__normPhone = normPhone;
   if(SADARI){ $("f-move").classList.add("hide"); $("f-sadari").classList.remove("hide");
     document.title = "Садарича"; }
 
