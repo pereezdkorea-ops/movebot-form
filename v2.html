@@ -142,7 +142,9 @@ input::placeholder{color:var(--hint)}
   var inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));
   var BOT = /(?:^|[?&])bot=1(?:$|&)/.test(location.search);      // opened from the bot's keyboard button
   // website orders (outside Telegram): Cloudflare Worker site-worker/; tests override via window.__siteApi
-  var SITE_API_URL = "https://movebot-site.pereezdkorea.workers.dev";   // Cloudflare Worker site-worker/ (website orders)
+  // website orders: served by Cloudflare (pereezd.<sub>.workers.dev) -> same-origin /order; on GitHub Pages -> the API Worker
+  var SITE_API_URL = /\.workers\.dev$|^(127\.0\.0\.1|localhost)$/.test(location.hostname) ? location.origin
+                   : "https://movebot-site.pereezdkorea.workers.dev";
   var SITE_API = (typeof window.__siteApi === "string" ? window.__siteApi : SITE_API_URL).replace(/\/+$/, "");
   var Q = function(k){return new RegExp("(?:^|[?&])" + k + "=1(?:$|&)").test(location.search)};
   var TG_SEND = !!(BOT && inTg && tg.sendData);                    // opened from the bot's keyboard button in Telegram
