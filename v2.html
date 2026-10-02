@@ -420,7 +420,7 @@ input::placeholder{color:var(--hint)}
       miss.length === 2 ? "Выберите города «Откуда» и «Куда»" : miss[0] === "from_city" ? "Выберите город «Откуда»" : "Выберите город «Куда»");
     if(!whenDate(when.kind, picker.value)) return fail("msg1", $("b-when"), "Выберите дату");
     $("msg1").textContent = "";
-    haptic(); show(2, true);
+    haptic(); show(2, true); track("next");
   };
   var sending = false;
   $("send").onclick = function(){
@@ -437,9 +437,50 @@ input::placeholder{color:var(--hint)}
       haptic("success"); show(3, true); return;
     }
     sending = true; haptic("success");
-    tg.sendData(s);                                     // Telegram closes the Mini App after sendData
-    setTimeout(function(){try{tg.close()}catch(e){}}, 300);
+    var go = function(){
+      tg.sendData(s);                                   // Telegram closes the Mini App after sendData
+      setTimeout(function(){try{tg.close()}catch(e){}}, 300);
+    };
+    var ev = track("sent");                             // let the step counter leave first (max 0.7 s)
+    if(ev){ var once = false, fire = function(){if(!once){once = true; go()}}; ev.then(fire, fire); setTimeout(fire, 700); }
+    else go();
   };
+  // ---- anonymous step counter for /stats: open -> next («Дальше») -> sent, each once per session ----
+  //      random session id (sessionStorage), no personal data; preview pages and tests are never counted
+  var EV_API = (typeof window.__eventApi === "string" ? window.__eventApi : SITE_API_URL).replace(/\/+$/, "");
+  var EV_SRC = TG_SEND ? "bot" : SITE ? "site" : "";
+  var EV_REF = (function(){var m = /(?:^|[?&])(?:ref|start)=([^&#]*)/.exec(location.search), r = "";
+    try{r = m ? decodeURIComponent(m[1]) : ""}catch(e){} return r.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 32)})();
+  function evSid(){
+    try{
+      var sid = sessionStorage.getItem("v2sid");
+      if(!sid){ var a = new Uint8Array(12); crypto.getRandomValues(a);
+        sid = Array.prototype.map.call(a, function(x){return ("0" + x.toString(16)).slice(-2)}).join(""); sessionStorage.setItem("v2sid", sid); }
+      return sid;
+    }catch(e){return null}
+  }
+  function track(step){                                 // -> a promise while the event is in flight, else null
+    if(!EV_API || !EV_SRC) return null;
+    var sid = evSid(); if(!sid) return null;
+    try{ if(sessionStorage.getItem("v2ev_" + step)) return null; sessionStorage.setItem("v2ev_" + step, "1"); }catch(e){return null}
+    var b = {v:1, sid:sid, step:step, src:EV_SRC};
+    if(EV_REF) b.ref = EV_REF;
+    if(Q("x")) b.x = true;                              // the bot marks own accounts
+    if(Q("test")) b.test = true;
+    var u = inTg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if(u && u.id) b.tgid = u.id;                        // only compared with the exclude list on the Worker, never stored
+    var body = JSON.stringify(b);
+    (window.__events = window.__events || []).push(b);
+    try{
+      return fetch(EV_API + "/event", {method:"POST", headers:{"Content-Type":"text/plain;charset=UTF-8"}, body:body,
+                                       mode:"cors", credentials:"omit", keepalive:true}).catch(function(){});
+    }catch(e){
+      try{navigator.sendBeacon && navigator.sendBeacon(EV_API + "/event", new Blob([body], {type:"text/plain"}))}catch(x){}
+      return null;
+    }
+  }
+  window.__track = track;
+
   var DONE_MSG = "Приняли. Перезвоним в ближайшие минуты.";
   var NET_ERR = "Не получилось отправить — проверьте интернет и попробуйте ещё раз.";
   function siteSend(d){
@@ -459,7 +500,7 @@ input::placeholder{color:var(--hint)}
       .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {status:r.status, j:j}})})
       .then(function(x){
         if(x.status === 200 && x.j && x.j.ok){
-          clearTimeout(timer); haptic("success");
+          clearTimeout(timer); haptic("success"); track("sent");
           $("done_msg").textContent = DONE_MSG; show(4, false);
           try{history.replaceState({s:4}, "")}catch(e){}
           return;
@@ -476,6 +517,7 @@ input::placeholder{color:var(--hint)}
 
   if(PREVIEW){ $("badge").classList.remove("hide"); document.title = "ПРЕВЬЮ · Заявка на переезд"; }
   if(SITE){ $("photo_note").classList.add("hide"); }                 // no chat to send photos to
+  track("open");
   $("theme").onclick = function(){window.__theme.toggle(); haptic()};
   window.__theme.apply(window.__theme.get());                       // paints the button (it did not exist in <head>)
   if(tg){ try{tg.ready(); tg.expand();
