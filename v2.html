@@ -114,6 +114,15 @@ h2{margin-bottom:8px}
 .top{padding:4px 2px 8px}
 .msg:empty{min-height:0;margin:0}
 .badge{position:absolute;top:18px;left:50%;transform:translateX(-50%);margin:0;z-index:4}   /* in the free middle of the top row */
+/* calls */
+/* our numbers on screen 1: two compact buttons under «1 / 2» (browser: tel:, Telegram: openLink -> call.html) */
+.calls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
+.calls a{display:flex;align-items:center;justify-content:center;min-width:0;min-height:42px;padding:0 6px;border-radius:12px;background:var(--card);
+  color:var(--text);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;text-decoration:none;white-space:nowrap;overflow:hidden;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.calls a:active{opacity:.6}
+@media (max-width:359px){.calls a{font-size:14px;padding:0 3px}}
+/* /calls */
 .auto{margin:8px 0 0 2px;font-size:13px;color:var(--text);font-weight:600}
 #phone_tg{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:12px;background:var(--chip);color:var(--text);font:inherit;
   font-size:15px;font-weight:600;cursor:pointer}
@@ -135,6 +144,12 @@ h2{margin-bottom:8px}
  <button type="button" class="theme" id="theme" aria-label="Тёмная тема">🌙</button>
  <div id="scr1">
   <div class="top"><div class="row"><span class="step">1 / 2</span></div></div>
+  <!-- calls -->
+  <nav class="calls" id="calls" aria-label="Позвонить нам">
+    <a href="tel:01048698751" data-tel="01048698751" aria-label="Позвонить 010-4869-8751">📞 010-4869-8751</a>
+    <a href="tel:01074021404" data-tel="01074021404" aria-label="Позвонить 010-7402-1404">📞 010-7402-1404</a>
+  </nav>
+  <!-- /calls -->
   <section id="b-items">
     <h2>Что везём</h2>
     <div id="items"></div>
@@ -215,6 +230,18 @@ h2{margin-bottom:8px}
                ["wardrobe","Шкаф"],["tv","Телевизор"]];                 // = movebot/form.py ITEMS2
   var ITEM_MAX = 20, FLOOR_MAX = 20;
   var CLIENT_MSG = "Приняли. Перезвоним в ближайшие минуты.";
+  // calls
+  // our numbers: in a browser the tel: link itself (one tap -> dialer); in Telegram tel: is blocked inside the Mini App,
+  // so open call.html (the page behind «📞 Позвонить клиенту») outside it: it dials at once, with a big button as a fallback
+  var CALL_PAGE = "https://pereezdkorea-ops.github.io/movebot-form/call.html";   // = movebot/maps.py CALL_PAGE
+  Array.prototype.forEach.call(document.querySelectorAll("#calls a"), function(a){
+    a.addEventListener("click", function(e){
+      if(!(inTg && tg.openLink)) return;
+      e.preventDefault();
+      try{tg.openLink(CALL_PAGE + "#" + a.getAttribute("data-tel"))}catch(err){location.href = a.href}
+    });
+  });
+  // /calls
   var $ = function(id){return document.getElementById(id)};
   function el(tag, attrs, html){var e = document.createElement(tag); for(var k in attrs||{}) e.setAttribute(k, attrs[k]);
     if(html != null) e.innerHTML = html; return e}
