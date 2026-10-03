@@ -43,11 +43,11 @@
 })();
 </script>
 <style>
-:root{--bg:#f2f2f7;--card:#fff;--text:#111;--hint:#8e8e93;--line:#e5e5ea;--chip:#f2f2f7;--on:#111;--on-text:#fff;--err:#e53935;--link:#2481cc;
+:root{--bg:#f2f2f7;--card:#fff;--text:#111;--hint:#8e8e93;--line:#e5e5ea;--chip:#f2f2f7;--on:#111;--on-text:#fff;--err:#e53935;--link:#2481cc;--call:#16a34a;
   --field:#fff;--dis:#c7c7cc;--bg0:rgba(242,242,247,0);color-scheme:light}
 /* night: black background, dark-grey cards, light active chip / main button; hints ≥ 4.5:1 on the cards */
 :root[data-theme="dark"]{--bg:#000;--card:#1c1c1e;--text:#f2f2f7;--hint:#a7a7ad;--line:#38383a;--chip:#2c2c2e;--on:#f2f2f7;--on-text:#111;
-  --err:#ff6961;--link:#5ac8fa;--field:#2c2c2e;--dis:#5a5a5e;--bg0:rgba(0,0,0,0);color-scheme:dark}
+  --err:#ff6961;--link:#5ac8fa;--call:#22c55e;--field:#2c2c2e;--dis:#5a5a5e;--bg0:rgba(0,0,0,0);color-scheme:dark}
 .theme{position:absolute;top:12px;right:10px;z-index:5;width:34px;height:34px;padding:0;border:0;border-radius:17px;background:var(--card);
   font-size:17px;line-height:34px;text-align:center;cursor:pointer;touch-action:manipulation;box-shadow:0 0 0 1px var(--line)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -123,6 +123,8 @@ h2{margin-bottom:8px}
   touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .calls a:active{opacity:.6}
 @media (max-width:359px){.calls a{font-size:14px;padding:0 3px}}
+/* the green handset (inline SVG, not the 📞 emoji): #16a34a by day (≥ 3:1 on white), #22c55e at night */
+.calls .ph{flex:none;width:1.3em;height:1.3em;margin:0 .22em 0 -.08em;fill:var(--call)}
 /* /calls */
 .auto{margin:8px 0 0 2px;font-size:13px;color:var(--text);font-weight:600}
 #phone_tg{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:12px;background:var(--chip);color:var(--text);font:inherit;
@@ -147,8 +149,8 @@ h2{margin-bottom:8px}
   <div class="top"><div class="row"><span class="step">1 / 2</span></div></div>
   <!-- calls -->
   <nav class="calls" id="calls" aria-label="Позвонить нам">
-    <a href="tel:01048698751" data-tel="01048698751" aria-label="Позвонить 010-4869-8751">📞 010-4869-8751</a>
-    <a href="tel:01074021404" data-tel="01074021404" aria-label="Позвонить 010-7402-1404">📞 010-7402-1404</a>
+    <a href="tel:01048698751" data-tel="01048698751" aria-label="Позвонить 010-4869-8751"><svg class="ph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg>010-4869-8751</a>
+    <a href="tel:01074021404" data-tel="01074021404" aria-label="Позвонить 010-7402-1404"><svg class="ph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg>010-7402-1404</a>
   </nav>
   <!-- /calls -->
   <section id="b-items">
