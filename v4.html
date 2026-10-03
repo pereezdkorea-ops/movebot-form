@@ -87,6 +87,7 @@ input::placeholder{color:var(--hint)}
 .whint{margin:8px 0 0 2px;min-height:16px;font-size:12px;line-height:16px;color:var(--hint)}
 .fl{display:flex;gap:8px;align-items:center;margin-top:8px}
 .fl select{flex:0 0 112px;width:112px}
+.fl.tm .whint{flex:1;min-width:0;margin:0;font-size:13px}                 /* time select + the chosen day on one row */
 .seg{display:flex;flex:1;min-width:0;background:var(--chip);border-radius:12px;padding:3px;min-height:48px}
 .seg button{flex:1;min-width:0;border:0;border-radius:9px;background:transparent;color:var(--text);font:inherit;font-size:15px;
   min-height:42px;padding:0 4px;white-space:nowrap;cursor:pointer;touch-action:manipulation}
@@ -177,7 +178,10 @@ h2{margin-bottom:8px}
   <section id="b-when">
     <h2>Когда</h2>
     <div class="chips" id="when" role="group" aria-label="Когда"></div>
-    <p class="whint" id="when_hint" aria-live="polite"></p>
+    <div class="fl tm">
+      <select id="time" class="empty" aria-label="Время (необязательно)"></select>
+      <p class="whint" id="when_hint" aria-live="polite"></p>
+    </div>
   </section>
   <section id="b-phone">
     <h2>Телефон</h2>
@@ -317,6 +321,11 @@ h2{margin-bottom:8px}
     dateChip.appendChild(picker); $("when").appendChild(dateChip);
   });
   paintWhen();
+  // time: optional, one native select like the floor one, hourly 07:00–22:00 («Время…» = not given)
+  var TIMES = []; for(var h = 7; h <= 22; h++) TIMES.push(pad(h) + ":00");
+  (function(s){s.appendChild(el("option",{value:""},"Время…"));
+    TIMES.forEach(function(t){s.appendChild(el("option",{value:t},t))});
+    s.value = ""; s.onchange = function(){upd(s)}})($("time"));
 
   // ---- floors + lifts ----
   var side = {};
@@ -410,10 +419,11 @@ h2{margin-bottom:8px}
     if(p.lift === true) b.push("лифт есть"); else if(p.lift === false) b.push("без лифта"); return b.join(", ")}
   function whenText(d){
     if(!d.date) return "не указано";
-    if(d.when === "today") return "сегодня";
-    if(d.when === "tomorrow") return "завтра";
-    if(d.when === "weekend") return "выходные (" + dayText(d.date) + "–" + dayText(addDays(d.date, 1)) + ")";
-    return dayText(d.date);
+    var t = d.time ? ", " + d.time : "";
+    if(d.when === "today") return "сегодня" + t;
+    if(d.when === "tomorrow") return "завтра" + t;
+    if(d.when === "weekend") return "выходные (" + dayText(d.date) + "–" + dayText(addDays(d.date, 1)) + ")" + t;
+    return dayText(d.date) + t;
   }
   function itemsText(items){
     return ITEMS.filter(function(it){return items[it[0]] > 0})
@@ -429,8 +439,9 @@ h2{margin-bottom:8px}
   function data(){
     var items = {}; ITEMS.forEach(function(it){items[it[0]] = counts[it[0]]});
     var d = whenDate(when.kind, picker.value);
+    var t = d && TIMES.indexOf($("time").value) >= 0 ? $("time").value : "";
     return {v:2, kind:"move2", from:sideData("from","from_city"), to:sideData("to","to_city"), when:d ? when.kind : "", date:d,
-            items:items, ladder:ladder.get(), phone:normPhone($("phone").value) || ""};
+            time:t, items:items, ladder:ladder.get(), phone:normPhone($("phone").value) || ""};
   }
 
   // ---- navigation ----
