@@ -238,7 +238,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
                    : "https://movebot-site.pereezdkorea.workers.dev";
   var SITE_API = (typeof window.__siteApi === "string" ? window.__siteApi : SITE_API_URL).replace(/\/+$/, "");
   var Q = function(k){return new RegExp("(?:^|[?&])" + k + "=1(?:$|&)").test(location.search)};
-  // v6 = draft (one page, pinned «Позвонить»). Review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
+  // v6 = the one-page form (pinned «Позвонить»), live as v2.html since 2026-10-04. Review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
   // no step counter) whatever the URL / Telegram, and shows the internal review screen; flip to false only when it replaces v2.html
   var FORCE_PREVIEW = true;
   var TG_SEND = !FORCE_PREVIEW && !!(BOT && inTg && tg.sendData);  // opened from the bot's keyboard button in Telegram

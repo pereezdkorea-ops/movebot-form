@@ -43,7 +43,8 @@
 })();
 </script>
 <style>
-/* v5 = live v2 with ONLY the colours changed to the farpost / «Календарь» palette: blue headings, links and selected states,
+/* v6 = DRAFT: the live form (v5 colours) on ONE scrolling page with a pinned bottom bar [Позвонить | Отправить заявку].
+   v5 = live v2 with ONLY the colours changed to the farpost / «Календарь» palette: blue headings, links and selected states,
    grey #666 captions, #1e1d20 values, orange #c24a00 accent; night: graphite #141518 with #79b0ff blue; the handset stays green */
 :root{--bg:#f5f8fa;--card:#fff;--text:#1e1d20;--hint:#666;--line:#e4e7ea;--chip:#eef3f8;--on:#1564d4;--on-text:#fff;--err:#c0281e;--link:#1564d4;--call:#16a34a;
   --field:#fff;--dis:#c6c6c6;--bg0:rgba(245,248,250,0);--title:#1564d4;--accent:#c24a00;color-scheme:light}
@@ -111,7 +112,7 @@ input::placeholder{color:var(--hint)}
 .cnt button:disabled{color:var(--dis);cursor:default}
 .cnt .n{width:30px;text-align:center;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
 .cnt .n.zero{color:var(--hint);font-weight:400}
-/* «Что везём» (screen 2): eight compact tiles, 4 per row (name over − n +), using the full card width */
+/* «Что везём»: eight compact tiles, 4 per row (name over − n +), using the full card width */
 #items{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:0 -4px}
 #items .cnt{flex-direction:column;justify-content:center;gap:5px;min-width:0;min-height:0;padding:8px 1px 6px;border-radius:12px;background:var(--chip)}
 #items .cnt+.cnt{border-top:0}
@@ -127,9 +128,12 @@ h2{margin-bottom:8px}
 .msg:empty{min-height:0;margin:0}
 .badge{position:absolute;top:18px;left:50%;transform:translateX(-50%);margin:0;z-index:4}   /* in the free middle of the top row */
 /* calls */
-/* one «Позвонить» right above the main button on both screens (thumb zone); a tap shows our two numbers above it, a second tap
-   hides them. Browser: tel:, Telegram: openLink -> call.html. The green handset is an inline SVG: #16a34a by day, #22c55e at night */
-.callbox{margin:0 0 6px}
+/* v6: one page; the bar is pinned to the bottom of the screen (thumb zone, above the home indicator) and never scrolls away:
+   [Позвонить | Отправить заявку] in one row. A tap on «Позвонить» shows our two numbers above the row, a second tap hides them.
+   Browser: tel:, Telegram: openLink -> call.html. The green handset is an inline SVG: #16a34a by day, #22c55e at night */
+.callbox{display:flex;gap:8px;margin:0}
+.callbox .callbtn{flex:0 0 38%;width:auto;min-height:54px;border-radius:14px}
+.callbox .main{flex:1 1 0;min-width:0}
 .callbtn,.nums a{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:42px;padding:0 6px;border:0;
   border-radius:12px;background:var(--card);color:var(--text);font:inherit;font-size:15px;font-weight:600;text-decoration:none;
   white-space:nowrap;overflow:hidden;cursor:pointer;touch-action:manipulation;box-shadow:inset 0 0 0 1px var(--line)}
@@ -144,10 +148,15 @@ h2{margin-bottom:8px}
   font-size:15px;font-weight:600;cursor:pointer}
 .grey{margin:10px 2px 0;font-size:13px;color:var(--hint)}
 .msg{color:var(--err);text-align:center;font-size:14px;min-height:18px;margin:2px 0 6px}
-.bar{position:sticky;bottom:0;padding:4px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(var(--bg0),var(--bg) 10px)}
-/* both form screens fill the viewport, so the bar («Позвонить» + the main button) sits at the bottom (thumb zone) even on the short screen 2 */
-#scr1,#scr2{display:flex;flex-direction:column;min-height:calc(100vh - 8px);min-height:calc(100dvh - 8px)}
-#scr1>.bar,#scr2>.bar{margin-top:auto}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:12px 12px calc(10px + env(safe-area-inset-bottom));
+  padding-left:max(12px, env(safe-area-inset-left));padding-right:max(12px, env(safe-area-inset-right));
+  background:linear-gradient(var(--bg0),var(--bg) 12px)}
+.bar>*{max-width:536px;margin-left:auto;margin-right:auto}
+/* nothing hides behind the pinned bar: the page ends --barh (the bar's real height, kept up to date by the script) lower,
+   and scrolling to a field (validation, focus) keeps it above the bar */
+:root{--barh:84px}
+html{scroll-padding-bottom:calc(var(--barh) + 8px)}
+#scr1{padding-bottom:calc(var(--barh) + 8px)}
 .main{display:block;width:100%;min-height:54px;border:0;border-radius:14px;background:var(--on);color:var(--on-text);font:inherit;
   font-size:17px;font-weight:600;cursor:pointer;touch-action:manipulation}
 .card{margin:0;white-space:pre-wrap;word-break:break-word;font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -162,7 +171,7 @@ h2{margin-bottom:8px}
 <main>
  <button type="button" class="theme" id="theme" aria-label="Тёмная тема">🌙</button>
  <div id="scr1">
-  <div class="top"><div class="row"><span class="step">1 / 2</span></div></div>
+  <div class="top"><div class="row"></div></div>
   <section id="b-from">
     <h2>Откуда</h2>
     <select id="from_city" class="empty" aria-label="Откуда"></select>
@@ -186,10 +195,6 @@ h2{margin-bottom:8px}
       <select id="time" class="empty" aria-label="Время (необязательно)"></select>
     </div>
   </section>
-  <div class="bar"><div class="callbox" data-calls></div><p class="msg" id="msg1"></p><button type="button" class="main" id="next">Дальше</button></div>
- </div>
- <div id="scr2" class="hide">
-  <div class="top"><div class="row"><button type="button" class="back" id="back">‹ Назад</button><span class="step">2 / 2</span></div></div>
   <section id="b-items">
     <h2>Что везём</h2>
     <div id="items"></div>
@@ -203,7 +208,7 @@ h2{margin-bottom:8px}
     <div class="hp" aria-hidden="true"><label for="hp">Не заполняйте это поле</label>
       <input type="text" id="hp" name="website" tabindex="-1" autocomplete="off"></div>
   </section>
-  <div class="bar"><div class="callbox" data-calls></div><p class="msg" id="msg2"></p><button type="button" class="main" id="send">Отправить заявку</button></div>
+  <div class="bar" id="bar"><p class="msg" id="msg" aria-live="polite"></p><div class="callbox" data-calls><button type="button" class="main" id="send">Отправить заявку</button></div></div>
  </div>
  <div id="scr3" class="hide">
   <div class="top"><div class="row"><button type="button" class="back" id="back3">‹ Назад</button></div><h1 id="pv_title"></h1></div>
@@ -233,7 +238,7 @@ h2{margin-bottom:8px}
                    : "https://movebot-site.pereezdkorea.workers.dev";
   var SITE_API = (typeof window.__siteApi === "string" ? window.__siteApi : SITE_API_URL).replace(/\/+$/, "");
   var Q = function(k){return new RegExp("(?:^|[?&])" + k + "=1(?:$|&)").test(location.search)};
-  // v4 = review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
+  // v6 = the one-page form (pinned «Позвонить»), live as v2.html since 2026-10-04. Review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
   // no step counter) whatever the URL / Telegram, and shows the internal review screen; flip to false only when it replaces v2.html
   var FORCE_PREVIEW = false;
   var TG_SEND = !FORCE_PREVIEW && !!(BOT && inTg && tg.sendData);  // opened from the bot's keyboard button in Telegram
@@ -266,7 +271,7 @@ h2{margin-bottom:8px}
   function upd(sel){sel.classList.toggle("empty", !sel.value)}
 
   // calls
-  // one «Позвонить» in the bottom bar of both screens, right above the main button; a tap shows our two numbers above it,
+  // one «Позвонить» in the pinned bottom bar, next to «Отправить заявку»; a tap shows our two numbers above them,
   // a second tap hides them again. Nothing is validated or sent, the form keeps everything entered.
   // Browser: the tel: link itself (one tap -> dialer); in Telegram tel: is blocked inside the Mini App, so open call.html
   // (the page behind «📞 Позвонить клиенту») outside it: it dials at once, with a big button as a fallback; no openLink -> tel:
@@ -288,11 +293,17 @@ h2{margin-bottom:8px}
       nums.appendChild(a);
     });
     var btn = el("button",{type:"button","class":"callbtn","aria-expanded":"false","aria-controls":nums.id}, PH + "Позвонить");
-    box.open = function(v){nums.classList.toggle("hide", !v); btn.setAttribute("aria-expanded", String(v))};
+    box.open = function(v){nums.classList.toggle("hide", !v); btn.setAttribute("aria-expanded", String(v)); barSize()};
     btn.onclick = function(){box.open(nums.classList.contains("hide")); haptic()};
-    box.appendChild(nums); box.appendChild(btn); callBoxes.push(box);
+    box.parentNode.insertBefore(nums, box); box.insertBefore(btn, box.firstChild); callBoxes.push(box);
   });
   function closeCalls(){callBoxes.forEach(function(b){b.open(false)})}
+  // the pinned bar's height (numbers open / an error line) -> --barh: the page's bottom space and the scroll padding follow it
+  function barSize(){var b = $("bar"); if(!b || $("scr1").classList.contains("hide")) return;   // (fixed: no offsetParent)
+    var h = Math.ceil(b.getBoundingClientRect().height) + "px";
+    if(document.documentElement.style.getPropertyValue("--barh") !== h) document.documentElement.style.setProperty("--barh", h)}
+  try{ if(window.ResizeObserver) new ResizeObserver(barSize).observe($("bar")); }catch(e){}
+  window.addEventListener("resize", barSize);
   // /calls
 
   // ---- screen 1: cities ----
@@ -301,7 +312,7 @@ h2{margin-bottom:8px}
     s.appendChild(el("option",{value:"",disabled:"",selected:"",hidden:""},"Город…"));   // placeholder, not a value
     CITIES.forEach(function(c){s.appendChild(el("option",{value:c},c))});
     s.value = "";
-    s.onchange = function(){upd(s); s.parentNode.classList.remove("err"); clearMsg1()};
+    s.onchange = function(){upd(s); s.parentNode.classList.remove("err"); fixed()};
   });
 
   // ---- when: Сегодня / Завтра / Выходные / Другая дата; Korean (KST) days whatever the phone's zone ----
@@ -329,7 +340,7 @@ h2{margin-bottom:8px}
     var d = whenDate(when.kind, picker.value);
     $("when_hint").textContent = !d ? "" : when.kind === "weekend" ? dayText(d) + " – " + dayText(addDays(d, 1)) : dayText(d);
   }
-  function whenChanged(){$("b-when").classList.remove("err"); clearMsg1()}
+  function whenChanged(){$("b-when").classList.remove("err"); fixed()}
   WHEN.forEach(function(w){
     if(w[0] !== "date"){
       var c = el("button",{type:"button","class":"chip","data-w":w[0]}, '<span class="t">' + w[1] + '</span>');
@@ -381,7 +392,7 @@ h2{margin-bottom:8px}
   function sideData(k, city){var f = side[k].floor.value;
     return {city:$(city).value, floor:f ? parseInt(f, 10) : null, lift:side[k].lift.get()}}
 
-  // ---- «Что везём» (screen 2): counters ----
+  // ---- «Что везём»: counters ----
   var counts = {};
   ITEMS.forEach(function(it){
     counts[it[0]] = 0;
@@ -399,7 +410,7 @@ h2{margin-bottom:8px}
     set(0);
   });
 
-  // ---- «Садарича» (screen 1, its own card right after «Откуда» / «Куда», before «Когда»): on by itself while a side is 3+ floor without a lift, updated live on
+  // ---- «Садарича» (its own card right after «Откуда» / «Куда», before «Когда»): on by itself while a side is 3+ floor without a lift, updated live on
   //      every floor/lift change; any manual tap hands it over to the client (a manual «Не нужна» is never overridden) ----
   var ladderTouched = false, ladderAuto = false;
   var ladder = segment([[true,"Нужна"],[false,"Не нужна"]], function(){ladderTouched = true; ladderAuto = false; $("ladder_auto").classList.add("hide")});
@@ -426,7 +437,7 @@ h2{margin-bottom:8px}
     return /^(?:01[016789]\d{7,8}|02\d{7,8}|0(?:[3-6][1-5]|70)\d{7,8})$/.test(d) ? d : null;
   }
   function fmtPhone(n){var m = /^(02|01\d|0\d\d)(\d{3,4})(\d{4})$/.exec(n); return m ? m[1] + "-" + m[2] + "-" + m[3] : n}
-  $("phone").oninput = function(){$("b-phone").classList.remove("err"); if(/номер|телефон/.test($("msg2").textContent)) $("msg2").textContent = ""};
+  $("phone").oninput = function(){$("b-phone").classList.remove("err"); refreshMsg()};
   function contactNumber(r){
     var c = r && r.responseUnsafe && r.responseUnsafe.contact, raw = c && c.phone_number ? String(c.phone_number) : "";
     if(!raw) return null;
@@ -483,54 +494,58 @@ h2{margin-bottom:8px}
             time:t, items:items, ladder:ladder.get(), phone:normPhone($("phone").value) || ""};
   }
 
-  // ---- navigation ----
+  // ---- navigation: one form page (1), the review copy's screen 3, the done screen 4 ----
   var useTgBack = !!(inTg && tg.BackButton && (!tg.isVersionAtLeast || tg.isVersionAtLeast("6.1")));
   var screen = 1;
   function show(n, push){
     screen = n; closeCalls();
-    [1,2,3,4].forEach(function(i){$("scr" + i).classList.toggle("hide", i !== n)});
+    [1,3,4].forEach(function(i){$("scr" + i).classList.toggle("hide", i !== n)});
     window.scrollTo(0, 0);
-    if(useTgBack){ if(n > 1) tg.BackButton.show(); else tg.BackButton.hide(); }
+    if(useTgBack){ if(n === 3) tg.BackButton.show(); else tg.BackButton.hide(); }
     if(push && !useTgBack){ try{history.pushState({s:n}, "")}catch(e){} }
+    if(n === 1) barSize();
   }
   function goBack(){
-    if(screen === 1) return;
-    if(!useTgBack && history.state && history.state.s > 1){ history.back(); return; }
-    show(screen - 1, false);
+    if(screen !== 3) return;
+    if(!useTgBack && history.state && history.state.s === 3){ history.back(); return; }
+    show(1, false);
   }
   window.addEventListener("popstate", function(e){var n = (e.state && e.state.s) || 1; if(n < screen && screen < 4) show(n, false)});
-  if(useTgBack){ $("back").classList.add("hide"); $("back3").classList.add("hide"); tg.BackButton.onClick(goBack); }
-  $("back").onclick = goBack; $("back3").onclick = goBack;
-  // screen 1 needs both cities and a date; the message names what is still missing and goes once it is fixed
-  var msg1For = "";
+  if(useTgBack){ $("back3").classList.add("hide"); tg.BackButton.onClick(goBack); }
+  $("back3").onclick = goBack;
+  // «Отправить заявку» checks, top to bottom: both cities, a date, the phone. Every missing field is outlined red, the page scrolls
+  // to the first one, the bar names it; each fix removes its outline and the message moves on to the next one (or goes)
   function hasDate(){return !!whenDate(when.kind, picker.value)}
-  function clearMsg1(){
-    if(msg1For === "city" && $("from_city").value && $("to_city").value){
-      if(!hasDate() && $("b-when").classList.contains("err")){ $("msg1").textContent = "Выберите дату"; msg1For = "date"; }
-      else { $("msg1").textContent = ""; msg1For = ""; }
-    } else if(msg1For === "date" && hasDate()){ $("msg1").textContent = ""; msg1For = ""; }
+  var CHECKS = [["b-from", function(){return !!$("from_city").value}], ["b-to", function(){return !!$("to_city").value}],
+                ["b-when", hasDate], ["b-phone", function(){return !!normPhone($("phone").value)}]];
+  var msgOn = false;
+  function msgText(ids){
+    var k = ids[0];
+    if(k === "b-from") return ids.indexOf("b-to") >= 0 ? "Выберите города «Откуда» и «Куда»" : "Выберите город «Откуда»";
+    if(k === "b-to") return "Выберите город «Куда»";
+    if(k === "b-when") return "Выберите дату";
+    return $("phone").value.trim() ? "Проверьте номер телефона — пример: 010-1234-5678" : "Укажите номер телефона";
   }
-  function fail(msgId, sec, text){
-    sec.classList.add("err"); $(msgId).textContent = text; haptic("error");
-    try{sec.scrollIntoView({behavior:"smooth", block:"center"})}catch(e){}
+  function refreshMsg(){
+    if(!msgOn) return;
+    var left = CHECKS.map(function(c){return c[0]}).filter(function(id){return $(id).classList.contains("err")});
+    $("msg").textContent = left.length ? msgText(left) : ""; msgOn = left.length > 0;
   }
-  $("next").onclick = function(){
-    var miss = ["from_city","to_city"].filter(function(id){return !$(id).value}), noDate = !hasDate();
-    miss.forEach(function(id){$(id).parentNode.classList.add("err")});
-    if(noDate) $("b-when").classList.add("err");
-    if(miss.length){ msg1For = "city"; return fail("msg1", $(miss[0]).parentNode,
-      miss.length === 2 ? "Выберите города «Откуда» и «Куда»" : miss[0] === "from_city" ? "Выберите город «Откуда»" : "Выберите город «Куда»"); }
-    if(noDate){ msg1For = "date"; return fail("msg1", $("b-when"), "Выберите дату"); }
-    $("msg1").textContent = ""; msg1For = "";
-    haptic(); show(2, true); track("next");
-  };
+  function fixed(){refreshMsg(); started()}
+  function fail(sec, text){
+    sec.classList.add("err"); $("msg").textContent = text; msgOn = true; haptic("error"); barSize();
+    try{sec.scrollIntoView({behavior:"smooth", block:"center"})}catch(e){sec.scrollIntoView()}
+    if(sec.id === "b-phone"){ try{$("phone").focus({preventScroll:true})}catch(e){} }
+  }
+  // step counter: no second screen any more, so «next» = the route and the date are chosen (what «Дальше» used to require)
+  function started(){ if($("from_city").value && $("to_city").value && hasDate()) track("next"); }
   var sending = false;
   $("send").onclick = function(){
     if(sending) return;
-    if(!hasDate()){ show(1, false); msg1For = "date"; return fail("msg1", $("b-when"), "Выберите дату"); }   // safety net
-    if(!normPhone($("phone").value))
-      return fail("msg2", $("b-phone"), $("phone").value.trim() ? "Проверьте номер телефона — пример: 010-1234-5678" : "Укажите номер телефона");
-    $("msg2").textContent = "";
+    var miss = CHECKS.filter(function(c){return !c[1]()}).map(function(c){return c[0]});
+    miss.forEach(function(id){$(id).classList.add("err")});
+    if(miss.length) return fail($(miss[0]), msgText(miss));
+    $("msg").textContent = ""; msgOn = false; CHECKS.forEach(function(c){$(c[0]).classList.remove("err")});   // e.g. after a Worker 400
     var d = data(), s = JSON.stringify(d);
     window.__lastPayload = s; window.__lastCard = cardText(d);
     if(SITE) return siteSend(d);
@@ -539,7 +554,7 @@ h2{margin-bottom:8px}
       if(FORCE_PREVIEW){ show(3, true); return; }
       $("done_msg").textContent = CLIENT_MSG; show(4, false); return;   // live build, ?preview=1: the client's screen, nothing sent
     }
-    if(BOT && !TG_SEND){ $("msg2").textContent = "Откройте форму из бота в Telegram"; return; }
+    if(BOT && !TG_SEND){ $("msg").textContent = "Откройте форму из бота в Telegram"; return; }
     sending = true; haptic("success");
     var go = function(){
       tg.sendData(s);                                   // Telegram closes the Mini App after sendData
@@ -549,7 +564,7 @@ h2{margin-bottom:8px}
     if(ev){ var once = false, fire = function(){if(!once){once = true; go()}}; ev.then(fire, fire); setTimeout(fire, 700); }
     else go();
   };
-  // ---- anonymous step counter for /stats: open -> next («Дальше») -> sent, each once per session ----
+  // ---- anonymous step counter for /stats: open -> next (route + date chosen; was «Дальше») -> sent, each once per session ----
   //      random session id (sessionStorage), no personal data; preview pages and tests are never counted
   var EV_API = (typeof window.__eventApi === "string" ? window.__eventApi : SITE_API_URL).replace(/\/+$/, "");
   var EV_SRC = TG_SEND ? "bot" : SITE ? "site" : "";
@@ -596,7 +611,7 @@ h2{margin-bottom:8px}
     var timer = setTimeout(function(){ctl && ctl.abort()}, 15000);
     function again(text, sec){
       clearTimeout(timer); sending = false; b.disabled = false; b.textContent = label;
-      sec ? fail("msg2", sec, text) : ($("msg2").textContent = text, haptic("error"));
+      sec ? fail(sec, text) : ($("msg").textContent = text, haptic("error"), barSize());
     }
     window.__sitePost = JSON.stringify(body);
     fetch(SITE_API + "/order", {method:"POST", headers:{"Content-Type":"text/plain;charset=UTF-8"}, body:window.__sitePost,
@@ -631,6 +646,7 @@ h2{margin-bottom:8px}
   track("open");
   $("theme").onclick = function(){window.__theme.toggle(); haptic()};
   window.__theme.apply(window.__theme.get());                       // paints the button (it did not exist in <head>)
+  barSize();
   if(tg){ try{tg.ready(); tg.expand();
     tg.MainButton && tg.MainButton.hide(); tg.disableVerticalSwipes && tg.disableVerticalSwipes()}catch(e){} }
 })();
