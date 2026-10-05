@@ -76,7 +76,7 @@ h2{margin:0 0 10px;font-size:15px;font-weight:600}
 h2 small,h3 small{font-weight:400;font-size:13px;color:var(--hint);margin-left:6px}
 .lbl{font-size:13px;color:var(--hint);margin:0 0 6px 2px}
 .mt{margin-top:12px}
-select,input[type=tel]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);
+select,input[type=tel],input[type=text]#other{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);
   color:var(--text);font:inherit;outline:none;appearance:none;-webkit-appearance:none}
 select{background-image:linear-gradient(45deg,transparent 50%,var(--hint) 50%),linear-gradient(135deg,var(--hint) 50%,transparent 50%);
   background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
@@ -116,6 +116,7 @@ input::placeholder{color:var(--hint)}
 #items{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:0 -4px}
 #items .cnt{flex-direction:column;justify-content:center;gap:5px;min-width:0;min-height:0;padding:8px 1px 6px;border-radius:12px;background:var(--chip)}
 #items .cnt+.cnt{border-top:0}
+#other{margin-top:8px}
 #items .name{max-width:100%;font-size:13px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #items .ctl{gap:1px}
 #items .cnt button{width:30px;height:30px;border-radius:15px;background:var(--card);font-size:19px}
@@ -198,6 +199,8 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   <section id="b-items">
     <h2>Что везём</h2>
     <div id="items"></div>
+    <input type="text" id="other" maxlength="200" autocomplete="off" enterkeyhint="done"
+           placeholder="Другое: опишите, чего нет в списке" aria-label="Другое: чего нет в списке">
   </section>
   <section id="b-phone">
     <h2>Телефон</h2>
@@ -240,6 +243,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   var Q = function(k){return new RegExp("(?:^|[?&])" + k + "=1(?:$|&)").test(location.search)};
   // v6 = the one-page form (pinned «Позвонить»), live as v2.html since 2026-10-04. Review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
   // no step counter) whatever the URL / Telegram, and shows the internal review screen; flip to false only when it replaces v2.html
+  // v7 = DRAFT (2026-10-05): v2 444a2cf6 + optional «Другое: …» line under the 8 counters (payload key items_other, ≤200 chars)
   var FORCE_PREVIEW = false;
   var TG_SEND = !FORCE_PREVIEW && !!(BOT && inTg && tg.sendData);  // opened from the bot's keyboard button in Telegram
   var SITE = !FORCE_PREVIEW && !TG_SEND && !!SITE_API && !Q("preview");   // real submit to the Worker
@@ -482,6 +486,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   function cardText(d){
     var out = [sideText(d.from) + " → " + sideText(d.to), "Когда: " + whenText(d)], it = itemsText(d.items);
     if(it) out.push(it);
+    if(d.items_other) out.push("Другое: " + d.items_other);
     if(d.ladder === true) out.push("Садарича: нужна"); else if(d.ladder === false) out.push("Садарича: не нужна");
     out.push("Телефон: " + (d.phone ? fmtPhone(d.phone) : "не указан"));
     return out.join("\n");
@@ -490,8 +495,16 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
     var items = {}; ITEMS.forEach(function(it){items[it[0]] = counts[it[0]]});
     var d = whenDate(when.kind, picker.value);
     var t = !d ? "" : TIMES.indexOf($("time").value) >= 0 ? $("time").value : PART_TEXT[part] ? part : "";   // "HH:MM" | part | ""
-    return {v:2, kind:"move2", from:sideData("from","from_city"), to:sideData("to","to_city"), when:d ? when.kind : "", date:d,
+    var r = {v:2, kind:"move2", from:sideData("from","from_city"), to:sideData("to","to_city"), when:d ? when.kind : "", date:d,
             time:t, items:items, ladder:ladder.get(), phone:normPhone($("phone").value) || ""};
+    var other = otherText();
+    if(other) r.items_other = other;                    // optional: no key at all when empty (= old v2 payload)
+    return r;
+  }
+  // «Другое»: one line, control chars -> space, spaces squeezed, ≤200 characters (= Worker cleanText / form.py _s)
+  function otherText(){
+    return Array.from(($("other").value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/[ \t]+/g, " ").trim())
+      .slice(0, 200).join("").trim();
   }
 
   // ---- navigation: one form page (1), the review copy's screen 3, the done screen 4 ----
