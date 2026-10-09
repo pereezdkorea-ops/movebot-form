@@ -8,14 +8,17 @@
 <meta name="color-scheme" content="light dark">
 <title>Позвонить сейчас</title>
 <style>
+/* 2026-10-09 20:2x: = the site / Mini App form: farpost palette (day #f5f8fa / #1564d4, night #141518 / #79b0ff),
+   outlined buttons = site bottom buttons: white + 2px #2c7dd2 (farpost .blueButton border) + #1e1d20; night #1c1e22 / #3283d1 / #f3f4f6 */
+:root{--bg:#f5f8fa;--text:#1e1d20;--hint:#666;--title:#1564d4;--ob-bg:#fff;--ob-line:#2c7dd2;--ob-text:#1e1d20}
+@media (prefers-color-scheme:dark){:root{--bg:#141518;--text:#f3f4f6;--hint:#a4a9b1;--title:#79b0ff;--ob-bg:#1c1e22;--ob-line:#3283d1;--ob-text:#f3f4f6}}
 html,body{margin:0;min-height:100%;font:18px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:#fff;color:#111}
-@media (prefers-color-scheme:dark){html,body{background:#17212b;color:#f5f5f5}}
+  background:var(--bg);color:var(--text)}
 main{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:24px 18px calc(24px + env(safe-area-inset-bottom));box-sizing:border-box;gap:12px}
-h1{margin:0 0 8px;font-size:20px;font-weight:700;text-align:center}
-.sub{margin:0 0 12px;font-size:14px;opacity:.65;text-align:center}
-a.num{display:block;width:100%;max-width:420px;padding:20px 16px;border-radius:16px;background:#2b5278;color:#fff;
+h1{margin:0 0 8px;font-size:20px;font-weight:700;text-align:center;color:var(--title)}
+.sub{margin:0 0 12px;font-size:14px;color:var(--hint);text-align:center}
+a.num{display:block;width:100%;max-width:420px;padding:20px 16px;border-radius:14px;background:var(--ob-bg);color:var(--ob-text);box-shadow:inset 0 0 0 2px var(--ob-line);
   font-size:22px;font-weight:700;text-decoration:none;text-align:center;box-sizing:border-box}
 a.num:active{opacity:.85}
 </style>
