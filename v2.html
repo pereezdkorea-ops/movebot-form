@@ -93,6 +93,16 @@ input::placeholder{color:var(--hint)}
 .chip input[type=date]{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;font-size:16px}
 .whint{margin:8px 0 0 2px;min-height:16px;font-size:12px;line-height:16px;color:var(--hint)}
 .fl{display:flex;gap:8px;align-items:center;margin-top:8px}
+/* DRAFT addr: optional address line + «📷 Адрес по фото» under the city */
+.addr{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-top:8px}   /* full-width address, the helper button under it */
+.addr input{flex:1 1 100%;min-width:0;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);
+  color:var(--text);font:inherit;font-size:15px;outline:none}
+.addr input:focus{border-color:var(--on)}
+.addrbtn{flex:1 1 100%;min-height:46px;padding:0 10px;border:0;border-radius:12px;background:var(--ob-bg);color:var(--ob-text);font:inherit;
+  font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;touch-action:manipulation;box-shadow:inset 0 0 0 2px var(--ob-line)}
+.addrbtn:disabled{opacity:.6}
+.ahint{margin:6px 0 0 2px;font-size:12px;line-height:16px;color:var(--hint);min-height:0}
+.ahint:empty{display:none}
 .fl select{flex:0 0 112px;width:112px}
 /* «Когда» row 2: optional part of the day (Утром / Днём / Вечером) OR an exact hour (Время…), never both; the chosen day sits in
    the heading, so the block is no taller than before and screen 1 still fits a 390×844 phone */
@@ -178,11 +188,17 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   <section id="b-from">
     <h2>Откуда</h2>
     <select id="from_city" class="empty" aria-label="Откуда"></select>
+    <div class="addr"><input type="text" id="from_addr" maxlength="200" autocomplete="street-address" enterkeyhint="next"
+      placeholder="Адрес (необязательно)" aria-label="Адрес откуда"><button type="button" class="addrbtn" id="ocr_btn_from">📷 Адрес по фото</button></div>
+    <p class="ahint" id="from_hint" aria-live="polite"></p>
     <div class="fl" data-side="from"></div>
   </section>
   <section id="b-to">
     <h2>Куда</h2>
     <select id="to_city" class="empty" aria-label="Куда"></select>
+    <div class="addr"><input type="text" id="to_addr" maxlength="200" autocomplete="off" enterkeyhint="next"
+      placeholder="Адрес (необязательно)" aria-label="Адрес куда"><button type="button" class="addrbtn" id="ocr_btn_to">📷 Адрес по фото</button></div>
+    <p class="ahint" id="to_hint" aria-live="polite"></p>
     <div class="fl" data-side="to"></div>
   </section>
   <section id="b-ladder">
@@ -213,6 +229,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
     <div class="hp" aria-hidden="true"><label for="hp">Не заполняйте это поле</label>
       <input type="text" id="hp" name="website" tabindex="-1" autocomplete="off"></div>
   </section>
+  <input type="file" id="ocr_file" accept="image/*" capture="environment" class="hide">
   <div class="bar" id="bar"><p class="msg" id="msg" aria-live="polite"></p><div class="callbox" data-calls><button type="button" class="main" id="send">Отправить заявку</button></div></div>
  </div>
  <div id="scr3" class="hide">
@@ -251,6 +268,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   // site.html = v8 with the switch off: the PUBLIC SITE only (pages.dev + pereezd Worker), 2026-10-09 19:4x. The bot form stays v2.html.
   // site_v9 = DRAFT 2026-10-09 19:5x: bottom buttons white + 2px farpost .blueButton border #2c7dd2 (--em-button-border, common-critical_dk_fp.css) + #1e1d20 text (night: #1c1e22 / farpost dark #3283d1 / #f3f4f6)
   // live as site.html since 2026-10-09 20:0x (Grig «Обновляй» 20:00); v2.html (bot Mini App) = the same since 20:2x (Grig «обнови миниапп также как сайт»)
+  // + «Адрес откуда/куда» + «📷 Адрес по фото» (= site.html 6b03b492), live as v2.html since 2026-10-12 11:5x (Grig «обновляй», item S)
   var FORCE_PREVIEW = false;
   var TG_SEND = !FORCE_PREVIEW && !!(BOT && inTg && tg.sendData);  // opened from the bot's keyboard button in Telegram
   var SITE = !FORCE_PREVIEW && !TG_SEND && !!SITE_API && !Q("preview");   // real submit to the Worker
@@ -398,7 +416,11 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
     side[k] = {floor:f, lift:lift};
   });
   function sideData(k, city){var f = side[k].floor.value;
-    return {city:$(city).value, floor:f ? parseInt(f, 10) : null, lift:side[k].lift.get()}}
+    var r = {city:$(city).value, floor:f ? parseInt(f, 10) : null, lift:side[k].lift.get()};
+    var a = cleanLine($(k + "_addr").value);
+    if(a) r.addr = a;                                   // DRAFT: optional, no key when empty (= old payload)
+    return r}
+  function cleanLine(v){return Array.from((v || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/[ \t]+/g, " ").trim()).slice(0, 200).join("").trim()}
 
   // ---- «Что везём»: counters ----
   var counts = {};
@@ -472,6 +494,81 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
     $("phone_tg").classList.add("hide");
   }
 
+  // ---- DRAFT: address helper (📷 photo -> OCR) under «Откуда» and «Куда». The client can always edit the field. ----
+  var CITY_KO = [[/안산/, "Ансан"], [/인천/, "Инчхон"], [/시흥/, "Сихын"], [/서울/, "Сеул"]];
+  function cityFromKo(t){for(var i = 0; i < CITY_KO.length; i++) if(CITY_KO[i][0].test(t || "")) return CITY_KO[i][1]; return ""}
+  function setCity(id, ru){var s = $(id); if(!ru || s.value === ru) return; s.value = ru; s.onchange()}
+  function hint(id, t){$(id).textContent = t || ""; barSize()}
+  // OCR: tesseract.js (kor+eng), loaded only on the first tap; runs on the phone, the photo never leaves it
+  var TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js", tessP = null;
+  function loadTess(){
+    return tessP || (tessP = new Promise(function(ok, no){
+      if(window.Tesseract) return ok(window.Tesseract);
+      var sc = document.createElement("script"); sc.src = TESS; sc.async = true;
+      sc.onload = function(){ok(window.Tesseract)}; sc.onerror = function(){tessP = null; no(new Error("tess"))};
+      document.head.appendChild(sc);
+    }));
+  }
+  function shrink(file){                                  // ≤1800 px, greyscale: faster and usually better OCR on phone photos
+    return new Promise(function(ok){
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function(){
+        var k = Math.min(1, 1800 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        var x = c.getContext("2d"); x.filter = "grayscale(1) contrast(1.3)"; x.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); ok(c);
+      };
+      img.onerror = function(){URL.revokeObjectURL(url); ok(file)};
+      img.src = url;
+    });
+  }
+  // the best address-looking line: city/district words + a road/lot number (도로명 …로/길 12, 지번 …동 123-4 번지)
+  function pickAddress(text){
+    var lines = (text || "").split(/\n+/).map(function(l){return l.replace(/\s+/g, " ").trim()}).filter(Boolean);
+    function squeeze(l){   // tesseract often splits Hangul words: «안 산 시» -> «안산시» (only 1-char runs)
+      return l.replace(/(^|\s)((?:[가-힣]\s){1,}[가-힣])(?=\s|$)/g, function(m, p, run){return p + run.replace(/\s/g, "")})}
+    var best = "", bestScore = 0;
+    lines.forEach(function(raw, i){
+      var l = squeeze(raw).replace(/^.*?(주\s*소|소재지|소\s*재\s*지|도로명주소|지번주소)\s*[:：]?\s*/, "");
+      var s = 0;
+      if(/(특별시|광역시|[가-힣]+도)(\s|$)/.test(l)) s += 2;
+      if(/[가-힣]+(시|군)(\s|$)/.test(l)) s += 2;
+      if(/[가-힣]+구(\s|$)/.test(l)) s += 1;
+      if(/[가-힣0-9]+(로|길)\s*\d+(-\d+)?/.test(l)) s += 3;
+      if(/[가-힣]+(동|리|가)\s*\d+(-\d+)?\s*(번지)?/.test(l)) s += 2;
+      if(/\d+\s*동\s*\d+\s*호|\d+\s*호/.test(l)) s += 1;
+      if(s > bestScore){bestScore = s; best = l;
+        var nx = lines[i + 1] && squeeze(lines[i + 1]);      // «… 아파트 101동 1203호» on the next line
+        if(nx && /(\d+\s*동\s*)?\d+\s*호|아파트|빌라|오피스텔/.test(nx) && nx.length < 40) best += " " + nx;}
+    });
+    best = best.replace(/[^가-힣A-Za-z0-9\-(),.·\s]/g, " ").replace(/\s+/g, " ").trim();
+    return bestScore >= 3 ? best : "";
+  }
+  window.__pickAddress = pickAddress;
+  var ocrSide = "to";                                    // which field the next photo fills: «Откуда» or «Куда»
+  ["from","to"].forEach(function(k){
+    $("ocr_btn_" + k).onclick = function(){ ocrSide = k; $("ocr_file").value = ""; $("ocr_file").click(); haptic(); };
+  });
+  $("ocr_file").onchange = function(){
+    var f = this.files && this.files[0]; if(!f) return;
+    var k = ocrSide, b = $("ocr_btn_" + k), h = k + "_hint", t0 = Date.now(); b.disabled = true; hint(h, "Загружаем распознавание…");
+    Promise.all([loadTess(), shrink(f)])
+      .then(function(r){
+        hint(h, "Читаем адрес с фото…");
+        return r[0].recognize(r[1], "kor+eng", {logger: function(m){
+          if(m.status === "recognizing text") hint(h, "Читаем адрес с фото… " + Math.round(m.progress * 100) + "%")}});
+      })
+      .then(function(res){
+        var text = res && res.data && res.data.text || ""; window.__ocrText = text; window.__ocrMs = Date.now() - t0;
+        var a = pickAddress(text);
+        if(!a) throw new Error("noaddr");
+        $(k + "_addr").value = a; setCity(k + "_city", cityFromKo(a));
+        hint(h, "📷 Проверьте адрес — распознавание может ошибаться");
+      })
+      .catch(function(){hint(h, "Адрес на фото не найден — снимите крупно только строку с адресом или введите вручную")})
+      .then(function(){b.disabled = false});
+  };
+
   // ---- card text: the same as the bot's (movebot/form.py move2_lines) ----
   function sideText(p){var b = [p.city, p.floor ? p.floor + " эт" : "этаж не указан"];
     if(p.lift === true) b.push("лифт есть"); else if(p.lift === false) b.push("без лифта"); return b.join(", ")}
@@ -489,6 +586,8 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   }
   function cardText(d){
     var out = [sideText(d.from) + " → " + sideText(d.to), "Когда: " + whenText(d)], it = itemsText(d.items);
+    if(d.from.addr) out.push("Адрес откуда: " + d.from.addr);
+    if(d.to.addr) out.push("Адрес куда: " + d.to.addr);
     if(it) out.push(it);
     if(d.items_other) out.push("Другое: " + d.items_other);
     if(d.ladder === true) out.push("Садарича: нужна"); else if(d.ladder === false) out.push("Садарича: не нужна");
