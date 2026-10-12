@@ -43,7 +43,7 @@
 })();
 </script>
 <style>
-/* v8 = DRAFT 2026-10-09: same as the bot — [Отправить заявку | 📞 Позвонить сейчас], 📞 Ансан / 📞 Инчон, one farpost blue (v5 palette: #1564d4 day / #79b0ff night), no green.
+/* v8 = DRAFT 2026-10-09: same as the bot — [Отправить заявку | 📞 Позвонить сейчас], 📞 Ансан / 📞 Инчхон, one farpost blue (v5 palette: #1564d4 day / #79b0ff night), no green.
    v6 = DRAFT: the live form (v5 colours) on ONE scrolling page with a pinned bottom bar [Позвонить | Отправить заявку].
    v5 = live v2 with ONLY the colours changed to the farpost / «Календарь» palette: blue headings, links and selected states,
    grey #666 captions, #1e1d20 values, orange #c24a00 accent; night: graphite #141518 with #79b0ff blue; the handset stays green */
@@ -233,7 +233,11 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
     <h2>Что везём</h2>
     <div id="items"></div>
     <input type="text" id="other" maxlength="200" autocomplete="off" enterkeyhint="done"
-           placeholder="Другое: опишите, чего нет в списке" aria-label="Другое: чего нет в списке">
+           placeholder="Например: коробки, стол, комод, разборка шкафа" aria-label="Другое: чего нет в списке">
+  </section>
+  <section id="b-movers">
+    <h2>Нужны грузчики?</h2>
+    <div id="movers_box"></div>
   </section>
   <section id="b-phone">
     <h2>Телефон</h2>
@@ -282,7 +286,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   // v6 = the one-page form (pinned «Позвонить»), live as v2.html since 2026-10-04. Review copy of the form: FORCE_PREVIEW = true -> never sends anything (no order, no sendData, no contact request,
   // no step counter) whatever the URL / Telegram, and shows the internal review screen; flip to false only when it replaces v2.html
   // v7 = DRAFT (2026-10-05): v2 444a2cf6 + optional «Другое: …» line under the 8 counters (payload key items_other, ≤200 chars)
-  // v8 = DRAFT (2026-10-09, «как в боте»): v2 cdf4a927 + bar [Отправить заявку | 📞 Позвонить сейчас], numbers «📞 Ансан» / «📞 Инчон»
+  // v8 = DRAFT (2026-10-09, «как в боте»): v2 cdf4a927 + bar [Отправить заявку | 📞 Позвонить сейчас], numbers «📞 Ансан» / «📞 Инчхон»
   // (tel:+82…, Telegram openLink call.html#%2B82…), no green: every coloured button / selected state = the v5 farpost blue (--on: #1564d4 + white / night #79b0ff + #141518)
   // site.html = v8 with the switch off: the PUBLIC SITE only (pages.dev + pereezd Worker), 2026-10-09 19:4x. The bot form stays v2.html.
   // site_v9 = DRAFT 2026-10-09 19:5x: bottom buttons white + 2px farpost .blueButton border #2c7dd2 (--em-button-border, common-critical_dk_fp.css) + #1e1d20 text (night: #1c1e22 / farpost dark #3283d1 / #f3f4f6)
@@ -290,6 +294,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   // + «Адрес откуда/куда» + «📷 Адрес по фото» (= site.html 6b03b492), live as v2.html since 2026-10-12 11:5x (Grig «обновляй», item S)
   // + addr2 (동/호/층 kept, 2nd zoomed OCR pass), live as v2.html since 2026-10-12 12:2x (Grig «обновляй и сайт и бот», items T+U)
   // + cam: «📷 Адрес по фото» -> «📷 Снять» | «🖼 Из галереи» (Telegram Android: in-page camera), live as v2.html since 2026-10-12 12:5x (Grig «обновляй», item V)
+  // + v9 form (2026-10-12 14:3x, Grig «обнови и сайт и бот»): «Нужны грузчики?» (payload movers), «Другое» hint, «Инчхон»
   var FORCE_PREVIEW = false;
   var TG_SEND = !FORCE_PREVIEW && !!(BOT && inTg && tg.sendData);  // opened from the bot's keyboard button in Telegram
   var SITE = !FORCE_PREVIEW && !TG_SEND && !!SITE_API && !Q("preview");   // real submit to the Worker
@@ -326,7 +331,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   // Browser: the tel: link itself (one tap -> dialer); in Telegram tel: is blocked inside the Mini App, so open call.html
   // (the page behind «📞 Позвонить клиенту») outside it: it dials at once, with a big button as a fallback; no openLink -> tel:
   var CALL_PAGE = "https://pereezdkorea-ops.github.io/movebot-form/call.html";   // = movebot/maps.py CALL_PAGE
-  var NUMS = [["+821048698751","📞 Ансан · 010-4869-8751"],["+821074021404","📞 Инчон · 010-7402-1404"]];   // = bot call_pick.html (2026-10-09)
+  var NUMS = [["+821048698751","📞 Ансан · 010-4869-8751"],["+821074021404","📞 Инчхон · 010-7402-1404"]];   // = bot call_pick.html (2026-10-09)
   var callBoxes = [];
   Array.prototype.forEach.call(document.querySelectorAll("[data-calls]"), function(box, i){
     var nums = el("div",{"class":"nums hide",id:"nums" + (i + 1),role:"group","aria-label":"Наши номера"});
@@ -466,6 +471,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
   var ladderTouched = false, ladderAuto = false;
   var ladder = segment([[true,"Нужна"],[false,"Не нужна"]], function(){ladderTouched = true; ladderAuto = false; $("ladder_auto").classList.add("hide")});
   $("ladder").replaceWith(ladder); ladder.id = "ladder";
+  var movers = segment([[true,"Да"],[false,"Нет"]]); movers.setAttribute("aria-label","Нужны грузчики?"); $("movers_box").appendChild(movers);   // payload movers: true|false (no key if not answered)
   function autoFloor(){
     var n = 0;
     ["from","to"].forEach(function(k){var f = parseInt(side[k].floor.value, 10);
@@ -705,6 +711,7 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
     if(d.to.addr) out.push("Адрес куда: " + d.to.addr);
     if(it) out.push(it);
     if(d.items_other) out.push("Другое: " + d.items_other);
+    if(d.movers === true) out.push("Грузчики: нужны"); else if(d.movers === false) out.push("Грузчики: не нужны");
     if(d.ladder === true) out.push("Садарича: нужна"); else if(d.ladder === false) out.push("Садарича: не нужна");
     out.push("Телефон: " + (d.phone ? fmtPhone(d.phone) : "не указан"));
     return out.join("\n");
@@ -715,7 +722,8 @@ html{scroll-padding-bottom:calc(var(--barh) + 8px)}
     var t = !d ? "" : TIMES.indexOf($("time").value) >= 0 ? $("time").value : PART_TEXT[part] ? part : "";   // "HH:MM" | part | ""
     var r = {v:2, kind:"move2", from:sideData("from","from_city"), to:sideData("to","to_city"), when:d ? when.kind : "", date:d,
             time:t, items:items, ladder:ladder.get(), phone:normPhone($("phone").value) || ""};
-    var other = otherText();
+    var other = otherText(), mv = movers.get();
+    if(mv === true || mv === false) r.movers = mv;      // «Нужны грузчики?» -> card «Грузчики: нужны / не нужны»
     if(other) r.items_other = other;                    // optional: no key at all when empty (= old v2 payload)
     return r;
   }
