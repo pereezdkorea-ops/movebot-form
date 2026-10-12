@@ -28,7 +28,7 @@ a.num:active{opacity:.85}
   <h1>📞 Позвонить сейчас</h1>
   <p class="sub">Выберите номер — звонок в один тап</p>
   <a class="num" id="n1" href="tel:+821048698751">📞 Ансан · 010-4869-8751</a>
-  <a class="num" id="n2" href="tel:+821074021404">📞 Инчон · 010-7402-1404</a>
+  <a class="num" id="n2" href="tel:+821074021404">📞 Инчхон · 010-7402-1404</a>
 </main>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
@@ -36,7 +36,7 @@ a.num:active{opacity:.85}
   "use strict";
   var CALL_PAGE = "https://pereezdkorea-ops.github.io/movebot-form/call.html";
   // [unused local digits, E.164 for tel: and call.html#, label]
-  var NUMS = [["01048698751","+821048698751","Ансан · 010-4869-8751"],["01074021404","+821074021404","Инчон · 010-7402-1404"]];
+  var NUMS = [["01048698751","+821048698751","Ансан · 010-4869-8751"],["01074021404","+821074021404","Инчхон · 010-7402-1404"]];
   var tg = window.Telegram && window.Telegram.WebApp;
   if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
   function wire(a, raw, e164, shown) {
